@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 const textColor = Color(0xFFe9e2e4);
@@ -29,8 +30,12 @@ const colorScheme = ColorScheme(
 );
 
 ThemeData darkTheme = ThemeData(
-  brightness: colorScheme.brightness,
   scaffoldBackgroundColor: colorScheme.surface,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: colorScheme.primary,
+    error: colorScheme.error,
+    brightness: colorScheme.brightness,
+  ),
   appBarTheme: AppBarTheme(
       backgroundColor: colorScheme.surface,
       surfaceTintColor: colorScheme.surface),
@@ -54,5 +59,16 @@ ThemeData darkTheme = ThemeData(
       TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
       TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
     },
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: colorScheme.onPrimary,
+    border: InputBorder.none,
+    enabledBorder: UnderlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
   ),
 );

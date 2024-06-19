@@ -29,8 +29,12 @@ const colorScheme = ColorScheme(
 );
 
 ThemeData lightTheme = ThemeData(
-  brightness: colorScheme.brightness,
   scaffoldBackgroundColor: colorScheme.surface,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: colorScheme.primary,
+    error: colorScheme.error,
+    brightness: colorScheme.brightness,
+  ),
   appBarTheme: AppBarTheme(
       backgroundColor: colorScheme.surface,
       surfaceTintColor: colorScheme.surface),
@@ -54,5 +58,16 @@ ThemeData lightTheme = ThemeData(
       TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
       TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
     },
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: colorScheme.onPrimary,
+    border: InputBorder.none,
+    enabledBorder: UnderlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
   ),
 );

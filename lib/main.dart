@@ -16,10 +16,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    //   statusBarColor: Color.fromARGB(0, 0, 0, 0),
-    // ));
-
     return MaterialApp.router(
       title: "Wallet",
       debugShowCheckedModeBanner: false,

@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'data.dart';
+
+// import 'data.dart';
+final List<Map<String, dynamic>> imageList = [];
 
 class AlbumPage extends StatelessWidget {
   final String name;
