@@ -1,39 +1,94 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:wallet/widget/touchable.dart';
+import 'package:image_picker/image_picker.dart';
 
-// import 'data.dart';
-final List<Map<String, dynamic>> imageList = [];
-
-class AlbumPage extends StatelessWidget {
+class AlbumPage extends StatefulWidget {
   final String name;
   const AlbumPage({super.key, required this.name});
+
+  @override
+  State<AlbumPage> createState() => _AlbumPageState();
+}
+
+class _AlbumPageState extends State<AlbumPage> {
+  List<FileSystemEntity> files = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getImages();
+  }
+
+  Future getImageFromGallery() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String directory = '${appDocDir.path}/Collectons';
+
+    final XFile? image =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    await File(image!.path).copy('$directory/${widget.name}/${image.name}');
+    getImages();
+  }
+
+  void getImages() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    String photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
+
+    try {
+      // Get a list of all entities (files and directories) in the app directory
+      List<FileSystemEntity> entities =
+          Directory(photoDirectoryPath).listSync();
+
+      setState(() {
+        files = entities.whereType<File>().toList();
+      });
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(name),
-        elevation: 0,
-        backgroundColor: Color.fromARGB(135, 0, 0, 0),
-        // forceMaterialTransparency: true,
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            // filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-            filter: ImageFilter.compose(
-                outer: ImageFilter.blur(
-                    sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
-                inner: ImageFilter.blur(
-                    sigmaY: 20 + 20,
-                    sigmaX: 10 + 20,
-                    tileMode: TileMode.clamp)),
-            child: Container(
-              color: Colors.transparent,
+          title: Text(widget.name),
+          elevation: 0,
+          backgroundColor: Color.fromARGB(135, 0, 0, 0),
+          // forceMaterialTransparency: true,
+          flexibleSpace: ClipRRect(
+            child: BackdropFilter(
+              // filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+              filter: ImageFilter.compose(
+                  outer: ImageFilter.blur(
+                      sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
+                  inner: ImageFilter.blur(
+                      sigmaY: 20 + 20,
+                      sigmaX: 10 + 20,
+                      tileMode: TileMode.clamp)),
+              child: Container(
+                color: Colors.transparent,
+              ),
             ),
           ),
-        ),
-      ),
+          actions: <Widget>[
+            TouchableOpacity(
+              onPressed: getImageFromGallery,
+              child: const Padding(
+                padding:
+                    EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+                child: Icon(Icons.add),
+              ),
+            ),
+          ]),
       body: GridView.builder(
         physics: const BouncingScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -42,22 +97,22 @@ class AlbumPage extends StatelessWidget {
           mainAxisSpacing: 2,
           crossAxisSpacing: 2,
         ),
-        itemCount: imageList.length,
+        itemCount: files.length,
         itemBuilder: (BuildContext context, int index) {
           return Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               GestureDetector(
                 onTap: () {
-                  const String imageUrl = "hello";
+                  String imageUrl = Uri.encodeQueryComponent(files[index].path);
                   context.push("/photo/$imageUrl");
                 },
                 child: Hero(
-                  tag: "photo" + imageList[index]["id"].toString(),
+                  tag: files[index].path,
                   child: AspectRatio(
                     aspectRatio: 1 / 1,
-                    child: Image.network(
-                      imageList[index]["url"],
+                    child: Image.file(
+                      File(files[index].path),
                       fit: BoxFit.cover,
                     ),
                   ),

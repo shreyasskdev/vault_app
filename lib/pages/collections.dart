@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-// import "data.dart";
+import 'package:wallet/widget/touchable.dart';
 
 class CollectionsPage extends StatefulWidget {
   const CollectionsPage({super.key});
@@ -108,8 +107,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Wallet"), actions: <Widget>[
-        GestureDetector(
-          onTap: () {
+        TouchableOpacity(
+          onPressed: () {
             createNewAlbum(context);
           },
           child: const Padding(
@@ -138,8 +137,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                   //   borderRadius: BorderRadius.circular(20),
                   // ),
                   onTap: () {
-                    final String albumName = directories[index].path;
-                    context.push("/album/$albumName");
+                    context.push(
+                        "/album/${directories[index].path.split("/").last}");
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),

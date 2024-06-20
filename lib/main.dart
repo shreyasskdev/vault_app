@@ -1,4 +1,4 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
 import 'package:wallet/pages/photo.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
