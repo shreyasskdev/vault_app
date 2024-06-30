@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:wallet/utils/filename.dart';
 import 'package:wallet/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -32,7 +33,13 @@ class _AlbumPageState extends State<AlbumPage> {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    await File(image!.path).copy('$directory/${widget.name}/${image.name}');
+    // await File(image!.path).copy('$directory/${widget.name}/${image.name}');
+    if (image == null) {
+      return;
+    }
+    await File(image.path).copy(
+        '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}');
+
     getImages();
   }
 
@@ -60,10 +67,17 @@ class _AlbumPageState extends State<AlbumPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+          leading: TouchableOpacity(
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 25,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title: Text(widget.name),
           elevation: 0,
           backgroundColor: Color.fromARGB(135, 0, 0, 0),
-          // forceMaterialTransparency: true,
+          forceMaterialTransparency: true,
           flexibleSpace: ClipRRect(
             child: BackdropFilter(
               // filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
@@ -85,7 +99,10 @@ class _AlbumPageState extends State<AlbumPage> {
               child: const Padding(
                 padding:
                     EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                child: Icon(Icons.add),
+                child: Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 25,
+                ),
               ),
             ),
           ]),
@@ -114,6 +131,12 @@ class _AlbumPageState extends State<AlbumPage> {
                     child: Image.file(
                       File(files[index].path),
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print("Wallet_Error: $error");
+                        return const Center(
+                          child: Text("error"),
+                        );
+                      },
                     ),
                   ),
                 ),

@@ -113,7 +113,10 @@ class _CollectionsPageState extends State<CollectionsPage> {
           },
           child: const Padding(
             padding: EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-            child: Icon(Icons.add),
+            child: Icon(
+              Icons.add_circle_outline_rounded,
+              size: 25,
+            ),
           ),
         ),
       ]),
