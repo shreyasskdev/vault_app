@@ -39,20 +39,24 @@ final GoRouter _router = GoRouter(
           ),
         ),
         GoRoute(
-          path: "photo/:url",
-          pageBuilder: (context, state) => CustomTransitionPage(
-            // transitionDuration: Duration(milliseconds: 500),
-            child: PhotoView(
-              url: state.pathParameters["url"]!,
-            ),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(
-                  opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
-                      .animate(animation),
-                  child: child);
-            },
-          ),
+          path: "photo/:url/:index",
+          pageBuilder: (context, state) {
+            return CustomTransitionPage(
+              // transitionDuration: Duration(milliseconds: 500),
+
+              child: PhotoView(
+                url: state.pathParameters["url"]!,
+                index: int.parse(state.pathParameters["index"]!),
+              ),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                    opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
+                        .animate(animation),
+                    child: child);
+              },
+            );
+          },
         ),
       ],
     ),

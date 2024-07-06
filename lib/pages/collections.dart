@@ -22,11 +22,18 @@ class _CollectionsPageState extends State<CollectionsPage> {
     getDirs();
   }
 
+  Future<String> getApplicationDirectory() async {
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    return appDocDir.path;
+  }
+
   void createNewAlbumDirectory() async {
     WidgetsFlutterBinding.ensureInitialized(); // Required for path_provider
     String directoryName = _controller.text;
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String newDirectoryPath = '${appDocDir.path}/Collectons/$directoryName';
+
+    // applicationDirectory = appDocDir;
 
     try {
       Directory newDirectory = await Directory(newDirectoryPath).create();
@@ -123,7 +130,9 @@ class _CollectionsPageState extends State<CollectionsPage> {
       body: SafeArea(
         child: GridView.builder(
           padding: const EdgeInsets.all(14),
-          physics: const BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 160,
             childAspectRatio: 1 / 1.46,
@@ -146,12 +155,34 @@ class _CollectionsPageState extends State<CollectionsPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: AspectRatio(
-                      aspectRatio: 1 / 1,
-                      child: Image.network(
-                        "https://picsum.photos/200",
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                        aspectRatio: 1 / 1,
+                        child: FutureBuilder<String>(
+                          future: getApplicationDirectory(),
+                          builder: (BuildContext context,
+                              AsyncSnapshot<String> snapshot) {
+                            if (snapshot.hasData) {
+                              String imagePath =
+                                  '${snapshot.data}/Collectons/${directories[index].path.split("/").last}/${directories[index].path.split("/").last}.image';
+
+                              return Image.file(
+                                File(imagePath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print("Wallet_Error: $error");
+                                  return Container(
+                                    color:
+                                        const Color.fromARGB(255, 14, 14, 14),
+                                    child: const Center(
+                                      child: Text("error"),
+                                    ),
+                                  );
+                                },
+                              );
+                            } else {
+                              return const CircularProgressIndicator();
+                            }
+                          },
+                        )),
                   ),
                 ),
                 SizedBox(
@@ -168,7 +199,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
                       ),
                       const Text(
                         "items",
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
                             color: Color.fromARGB(255, 152, 152, 152)),
                       ),

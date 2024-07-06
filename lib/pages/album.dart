@@ -17,6 +17,7 @@ class AlbumPage extends StatefulWidget {
 
 class _AlbumPageState extends State<AlbumPage> {
   List<FileSystemEntity> files = [];
+  String photoDirectoryPath = "";
 
   @override
   void initState() {
@@ -47,7 +48,7 @@ class _AlbumPageState extends State<AlbumPage> {
     WidgetsFlutterBinding.ensureInitialized();
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    String photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
+    photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
 
     try {
       // Get a list of all entities (files and directories) in the app directory
@@ -76,7 +77,7 @@ class _AlbumPageState extends State<AlbumPage> {
           ),
           title: Text(widget.name),
           elevation: 0,
-          backgroundColor: Color.fromARGB(135, 0, 0, 0),
+          backgroundColor: const Color.fromARGB(135, 0, 0, 0),
           forceMaterialTransparency: true,
           flexibleSpace: ClipRRect(
             child: BackdropFilter(
@@ -107,7 +108,8 @@ class _AlbumPageState extends State<AlbumPage> {
             ),
           ]),
       body: GridView.builder(
-        physics: const BouncingScrollPhysics(),
+        physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics()),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 160,
           childAspectRatio: 1 / 1,
@@ -121,8 +123,10 @@ class _AlbumPageState extends State<AlbumPage> {
             children: [
               GestureDetector(
                 onTap: () {
-                  String imageUrl = Uri.encodeQueryComponent(files[index].path);
-                  context.push("/photo/$imageUrl");
+                  String imageUrl =
+                      Uri.encodeQueryComponent(photoDirectoryPath);
+                  context.push("/photo/$imageUrl/$index");
+                  // context.push("/photo/$imageUrl");
                 },
                 child: Hero(
                   tag: files[index].path,

@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:wallet/widget/touchable.dart';
 import 'dart:io';
 
-import 'package:photo_view/photo_view.dart';
-import 'package:photo_view/photo_view_gallery.dart';
-
 class PhotoView extends StatefulWidget {
   final String url;
   final int index;
@@ -61,54 +58,40 @@ class _PhotoViewState extends State<PhotoView> {
         backgroundColor: Colors.transparent,
         forceMaterialTransparency: true,
       ),
-      body: Stack(children: [
-        PhotoViewGallery.builder(
-          scrollPhysics: (Platform.isFuchsia ||
-                  Platform.isLinux ||
-                  Platform.isWindows ||
-                  Platform.isMacOS)
-              ? const ScrollPhysics()
-              : const BouncingScrollPhysics(),
+      body: Stack(
+        children: [
+          PageView.builder(
+            // onPageChanged: (page) => {
+            //   setState(() {
+            //     activePage =page;
+            //   });
+            // },
 
-          builder: (BuildContext context, int index) {
-            return PhotoViewGalleryPageOptions(
-              imageProvider: Image.file(
-                File(files[index].path),
-                fit: BoxFit.contain,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  print("Wallet_Error: $error");
-                  return const Center(
-                    child: Text("error"),
-                  );
-                },
-              ).image,
-              initialScale: PhotoViewComputedScale.contained,
-              minScale: PhotoViewComputedScale.contained,
-              heroAttributes: PhotoViewHeroAttributes(tag: files[index].path),
-            );
-          },
-          itemCount: files.length,
-
-          // loadingBuilder: (context, event) => Center(
-          //   child: Container(
-          //     width: 20.0,
-          //     height: 20.0,
-          //     child: CircularProgressIndicator(
-          //       value: event == null
-          //           ? 0
-          //           : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-          //     ),
-          //   ),
-          // ),
-          // backgroundDecoration: widget.backgroundDecoration,
-          pageController: pageController,
-          // onPageChanged: onPageChanged,
-        ),
-        if (Platform.isFuchsia ||
-            Platform.isLinux ||
-            Platform.isWindows ||
-            Platform.isMacOS)
+            controller: pageController,
+            pageSnapping: true,
+            physics: const ClampingScrollPhysics(),
+            itemCount: files.length,
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                child: Center(
+                  child: Hero(
+                    tag: widget.url,
+                    child: Image.file(
+                      File(files[index].path),
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        print("Wallet_Error: $error");
+                        return const Center(
+                          child: Text("error"),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           Positioned(
             left: 10,
             top: 0,
@@ -127,10 +110,6 @@ class _PhotoViewState extends State<PhotoView> {
               ),
             ),
           ),
-        if (Platform.isFuchsia ||
-            Platform.isLinux ||
-            Platform.isWindows ||
-            Platform.isMacOS)
           Positioned(
             right: 10,
             top: 0,
@@ -149,7 +128,8 @@ class _PhotoViewState extends State<PhotoView> {
               ),
             ),
           ),
-      ]),
+        ],
+      ),
     );
   }
 }
