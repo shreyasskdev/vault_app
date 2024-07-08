@@ -1,4 +1,4 @@
-name: wallet
+name: Vault
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -41,7 +41,8 @@ dependencies:
   image_picker: ^0.8.5+3
   path_provider: ^2.0.11
   name_plus: ^0.0.1
-
+  photo_view: ^0.15.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,7 +57,6 @@ dev_dependencies:
   go_router_builder: any
   build_runner: any
 
-  photo_view: ^0.15.0
   
 
 # For information on the generic Dart part of this file, see the

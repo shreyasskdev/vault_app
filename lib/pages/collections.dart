@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:Vault/widget/touchable.dart';
 import 'dart:io';
-import 'package:wallet/widget/touchable.dart';
 
 class CollectionsPage extends StatefulWidget {
   const CollectionsPage({super.key});
@@ -16,15 +16,10 @@ class _CollectionsPageState extends State<CollectionsPage> {
 
   List<Directory> directories = [];
 
-  @override
+  @override // Code to run in startup
   void initState() {
     super.initState();
     getDirs();
-  }
-
-  Future<String> getApplicationDirectory() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    return appDocDir.path;
   }
 
   void createNewAlbumDirectory() async {
@@ -33,21 +28,19 @@ class _CollectionsPageState extends State<CollectionsPage> {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String newDirectoryPath = '${appDocDir.path}/Collectons/$directoryName';
 
-    // applicationDirectory = appDocDir;
-
     try {
-      Directory newDirectory = await Directory(newDirectoryPath).create();
-      print('Created directory: ${newDirectory.path}');
+      await Directory(newDirectoryPath).create();
     } catch (e) {
       if (e is PathNotFoundException) {
         await Directory('${appDocDir.path}/Collectons').create();
-        Directory newDirectory = await Directory(newDirectoryPath).create();
-        print('Created directory: ${newDirectory.path}');
+        await Directory(newDirectoryPath).create();
       } else {
         print('Error creating directory: $e');
       }
     }
-    context.pop();
+    if (mounted) {
+      context.pop();
+    }
     getDirs();
     _controller.text = "";
   }
@@ -59,7 +52,6 @@ class _CollectionsPageState extends State<CollectionsPage> {
     String appDirectoryPath = '${appDocDir.path}/Collectons';
 
     try {
-      // Get a list of all entities (files and directories) in the app directory
       List<FileSystemEntity> entities = Directory(appDirectoryPath).listSync();
 
       setState(() {
@@ -113,20 +105,24 @@ class _CollectionsPageState extends State<CollectionsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Wallet"), actions: <Widget>[
-        TouchableOpacity(
-          onPressed: () {
-            createNewAlbum(context);
-          },
-          child: const Padding(
-            padding: EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-            child: Icon(
-              Icons.add_circle_outline_rounded,
-              size: 25,
+      appBar: AppBar(
+        title: const Text("Wallet"),
+        actions: <Widget>[
+          TouchableOpacity(
+            onPressed: () {
+              createNewAlbum(context);
+            },
+            child: const Padding(
+              padding:
+                  EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+              child: Icon(
+                Icons.add_circle_outline_rounded,
+                size: 25,
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
       body: SafeArea(
         child: GridView.builder(
           padding: const EdgeInsets.all(14),
@@ -145,9 +141,6 @@ class _CollectionsPageState extends State<CollectionsPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 GestureDetector(
-                  // customBorder: RoundedRectangleBorder(
-                  //   borderRadius: BorderRadius.circular(20),
-                  // ),
                   onTap: () {
                     context.push(
                         "/album/${directories[index].path.split("/").last}");
@@ -155,34 +148,34 @@ class _CollectionsPageState extends State<CollectionsPage> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: AspectRatio(
-                        aspectRatio: 1 / 1,
-                        child: FutureBuilder<String>(
-                          future: getApplicationDirectory(),
-                          builder: (BuildContext context,
-                              AsyncSnapshot<String> snapshot) {
-                            if (snapshot.hasData) {
-                              String imagePath =
-                                  '${snapshot.data}/Collectons/${directories[index].path.split("/").last}/${directories[index].path.split("/").last}.image';
+                      aspectRatio: 1 / 1,
+                      child: FutureBuilder<Directory>(
+                        future: getApplicationDocumentsDirectory(),
+                        builder: (BuildContext context,
+                            AsyncSnapshot<Directory> snapshot) {
+                          if (snapshot.hasData) {
+                            String imagePath =
+                                '${snapshot.data!.path}/Collectons/${directories[index].path.split("/").last}/${directories[index].path.split("/").last}.image';
 
-                              return Image.file(
-                                File(imagePath),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  print("Wallet_Error: $error");
-                                  return Container(
-                                    color:
-                                        const Color.fromARGB(255, 14, 14, 14),
-                                    child: const Center(
-                                      child: Text("error"),
-                                    ),
-                                  );
-                                },
-                              );
-                            } else {
-                              return const CircularProgressIndicator();
-                            }
-                          },
-                        )),
+                            return Image.file(
+                              File(imagePath),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                print("Wallet_Error: $error");
+                                return Container(
+                                  color: const Color.fromARGB(255, 14, 14, 14),
+                                  child: const Center(
+                                    child: Text("error"),
+                                  ),
+                                );
+                              },
+                            );
+                          } else {
+                            return const CircularProgressIndicator();
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 ),
                 SizedBox(
@@ -194,14 +187,14 @@ class _CollectionsPageState extends State<CollectionsPage> {
                         directories[index].path.split("/").last,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          // color: Colors.white,
                         ),
                       ),
                       const Text(
                         "items",
                         style: TextStyle(
-                            fontSize: 12,
-                            color: Color.fromARGB(255, 152, 152, 152)),
+                          fontSize: 12,
+                          color: Color.fromARGB(255, 152, 152, 152),
+                        ),
                       ),
                     ],
                   ),

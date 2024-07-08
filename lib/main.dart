@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wallet/pages/photo.dart';
+import 'package:Vault/pages/photo.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
@@ -42,8 +42,6 @@ final GoRouter _router = GoRouter(
           path: "photo/:url/:index",
           pageBuilder: (context, state) {
             return CustomTransitionPage(
-              // transitionDuration: Duration(milliseconds: 500),
-
               child: PhotoView(
                 url: state.pathParameters["url"]!,
                 index: int.parse(state.pathParameters["index"]!),

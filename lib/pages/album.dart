@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:wallet/utils/filename.dart';
-import 'package:wallet/widget/touchable.dart';
+import 'package:Vault/utils/filename.dart';
+import 'package:Vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AlbumPage extends StatefulWidget {
@@ -19,7 +19,7 @@ class _AlbumPageState extends State<AlbumPage> {
   List<FileSystemEntity> files = [];
   String photoDirectoryPath = "";
 
-  @override
+  @override // stratup code
   void initState() {
     super.initState();
     getImages();
@@ -34,7 +34,6 @@ class _AlbumPageState extends State<AlbumPage> {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    // await File(image!.path).copy('$directory/${widget.name}/${image.name}');
     if (image == null) {
       return;
     }
@@ -51,7 +50,6 @@ class _AlbumPageState extends State<AlbumPage> {
     photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
 
     try {
-      // Get a list of all entities (files and directories) in the app directory
       List<FileSystemEntity> entities =
           Directory(photoDirectoryPath).listSync();
 
@@ -68,48 +66,49 @@ class _AlbumPageState extends State<AlbumPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-          leading: TouchableOpacity(
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 25,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
+        leading: TouchableOpacity(
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 25,
           ),
-          title: Text(widget.name),
-          elevation: 0,
-          backgroundColor: const Color.fromARGB(135, 0, 0, 0),
-          forceMaterialTransparency: true,
-          flexibleSpace: ClipRRect(
-            child: BackdropFilter(
-              // filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-              filter: ImageFilter.compose(
-                  outer: ImageFilter.blur(
-                      sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
-                  inner: ImageFilter.blur(
-                      sigmaY: 20 + 20,
-                      sigmaX: 10 + 20,
-                      tileMode: TileMode.clamp)),
-              child: Container(
-                color: Colors.transparent,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(widget.name),
+        elevation: 0,
+        backgroundColor: const Color.fromARGB(135, 0, 0, 0),
+        forceMaterialTransparency: true,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            // filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            filter: ImageFilter.compose(
+              outer: ImageFilter.blur(
+                  sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
+              inner: ImageFilter.blur(
+                  sigmaY: 20 + 20, sigmaX: 10 + 20, tileMode: TileMode.clamp),
+            ),
+            child: Container(
+              color: Colors.transparent,
+            ),
+          ),
+        ),
+        actions: <Widget>[
+          TouchableOpacity(
+            onPressed: getImageFromGallery,
+            child: const Padding(
+              padding:
+                  EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+              child: Icon(
+                Icons.add_circle_outline_rounded,
+                size: 25,
               ),
             ),
           ),
-          actions: <Widget>[
-            TouchableOpacity(
-              onPressed: getImageFromGallery,
-              child: const Padding(
-                padding:
-                    EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                child: Icon(
-                  Icons.add_circle_outline_rounded,
-                  size: 25,
-                ),
-              ),
-            ),
-          ]),
+        ],
+      ),
       body: GridView.builder(
         physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics()),
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: 160,
           childAspectRatio: 1 / 1,
@@ -126,7 +125,6 @@ class _AlbumPageState extends State<AlbumPage> {
                   String imageUrl =
                       Uri.encodeQueryComponent(photoDirectoryPath);
                   context.push("/photo/$imageUrl/$index");
-                  // context.push("/photo/$imageUrl");
                 },
                 child: Hero(
                   tag: files[index].path,

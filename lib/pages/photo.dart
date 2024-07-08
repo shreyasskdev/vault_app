@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wallet/widget/touchable.dart';
+import 'package:Vault/widget/touchable.dart';
 import 'dart:io';
 
 import 'package:photo_view/photo_view.dart';
@@ -16,7 +16,6 @@ class PhotoView extends StatefulWidget {
 
 class _PhotoViewState extends State<PhotoView> {
   List<FileSystemEntity> files = [];
-  // String photoDirectoryPath = "";
   PageController pageController = PageController();
 
   @override
@@ -29,11 +28,7 @@ class _PhotoViewState extends State<PhotoView> {
   void getImages() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Directory appDocDir = await getApplicationDocumentsDirectory();
-    // photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
-
     try {
-      // Get a list of all entities (files and directories) in the app directory
       List<FileSystemEntity> entities = Directory(widget.url).listSync();
 
       setState(() {
