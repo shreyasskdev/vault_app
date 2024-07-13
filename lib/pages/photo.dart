@@ -51,7 +51,9 @@ class _PhotoViewState extends State<PhotoView> {
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text("Photo"),
+        title:
+            const Text("Photo", style: TextStyle(fontWeight: FontWeight.w600)),
+        centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         forceMaterialTransparency: true,

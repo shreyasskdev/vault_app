@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-const textColor = Color(0xFFe9e2e4);
-const backgroundColor = Color(0xFF080606);
-const primaryColor = Color(0xFFc9b0b5);
-const primaryFgColor = Color(0xFF080606);
-const secondaryColor = Color(0xFF6b444b);
-const secondaryFgColor = Color(0xFFe9e2e4);
-const accentColor = Color(0xFFa96f7a);
-const accentFgColor = Color(0xFF080606);
+// const textColor = Color(0xFFe9e2e4);
+// const backgroundColor = Color(0xFF080606);
+// const primaryColor = Color(0xFFc9b0b5);
+// const primaryFgColor = Color(0xFF080606);
+// const secondaryColor = Color(0xFF6b444b);
+// const secondaryFgColor = Color(0xFFe9e2e4);
+// const accentColor = Color(0xFFa96f7a);
+// const accentFgColor = Color(0xFF080606);
+
+const textColor = Colors.white;
+const backgroundColor = Colors.black;
+const primaryColor = Colors.white;
+const primaryFgColor = Colors.black;
+const secondaryColor = Colors.white;
+const secondaryFgColor = Colors.black;
+const accentColor = Colors.white;
+const accentFgColor = Colors.black;
 
 const colorScheme = ColorScheme(
   brightness: Brightness.dark,

@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
@@ -66,35 +69,38 @@ class _CollectionsPageState extends State<CollectionsPage> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          content: SizedBox(
-            height: 120,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextField(
-                  controller: _controller,
-                  decoration: const InputDecoration(
-                    hintText: "Create a new Album",
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        createNewAlbumDirectory();
-                      },
-                      child: const Text("Create"),
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: AlertDialog(
+            content: SizedBox(
+              height: 120,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(
+                      hintText: "Create a new Album",
                     ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: const Text("Cancel"),
-                    )
-                  ],
-                )
-              ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          createNewAlbumDirectory();
+                        },
+                        child: const Text("Create"),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => context.pop(),
+                        child: const Text("Cancel"),
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         );
@@ -106,7 +112,9 @@ class _CollectionsPageState extends State<CollectionsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Wallet"),
+        title:
+            const Text("Wallet", style: TextStyle(fontWeight: FontWeight.w600)),
+        centerTitle: true,
         actions: <Widget>[
           TouchableOpacity(
             onPressed: () {
@@ -131,22 +139,22 @@ class _CollectionsPageState extends State<CollectionsPage> {
           ),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 160,
-            childAspectRatio: 1 / 1.46,
+            childAspectRatio: 1,
             mainAxisSpacing: 5,
             crossAxisSpacing: 5,
           ),
           itemCount: directories.length,
           itemBuilder: (BuildContext context, int index) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    context.push(
-                        "/album/${directories[index].path.split("/").last}");
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+            return GestureDetector(
+              onTap: () {
+                context
+                    .push("/album/${directories[index].path.split("/").last}");
+              },
+              child: Stack(
+                children: [
+                  ClipSmoothRect(
+                    radius: const SmoothBorderRadius.all(
+                        SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5)),
                     child: AspectRatio(
                       aspectRatio: 1 / 1,
                       child: FutureBuilder<Directory>(
@@ -177,29 +185,28 @@ class _CollectionsPageState extends State<CollectionsPage> {
                       ),
                     ),
                   ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        directories[index].path.split("/").last,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color.fromARGB(0, 0, 0, 0),
+                          Color.fromARGB(200, 0, 0, 0)
+                        ],
                       ),
-                      const Text(
-                        "items",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color.fromARGB(255, 152, 152, 152),
-                        ),
+                    ),
+                    alignment: Alignment.bottomRight,
+                    padding: const EdgeInsets.fromLTRB(0, 0, 15, 5),
+                    child: Text(
+                      directories[index].path.split("/").last,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
