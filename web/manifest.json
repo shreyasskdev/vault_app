@@ -1,6 +1,6 @@
 {
-    "name": "wallet",
-    "short_name": "wallet",
+    "name": "vault",
+    "short_name": "vault",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

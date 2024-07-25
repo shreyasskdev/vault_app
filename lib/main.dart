@@ -7,7 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'themes/dark_theme.dart';
 import 'themes/light_theme.dart';
 
-void main() {
+import 'package:Vault/src/rust/frb_generated.dart';
+
+Future<void> main() async {
+  await RustLib.init();
   runApp(const MyApp());
 }
 

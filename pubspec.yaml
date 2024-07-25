@@ -44,6 +44,9 @@ dependencies:
   photo_view: ^0.15.0
 
   figma_squircle: ^0.5.3
+  rust_lib_Vault:
+    path: rust_builder
+  flutter_rust_bridge: 2.1.0
   
 dev_dependencies:
   flutter_test:
@@ -58,6 +61,8 @@ dev_dependencies:
 
   go_router_builder: any
   build_runner: any
+  integration_test:
+    sdk: flutter
 
   
 
