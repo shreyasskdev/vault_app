@@ -1,3 +1,4 @@
+import 'package:Vault/themes/light_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -19,9 +20,38 @@ const secondaryFgColor = Colors.black;
 const accentColor = Colors.white;
 const accentFgColor = Colors.black;
 
-const colorScheme = ColorScheme(
+const MaterialColor backgroundShade = MaterialColor(
+  900,
+  <int, Color>{
+    50: Color.fromARGB(255, 120, 120, 120),
+    100: Color.fromARGB(255, 90, 90, 90),
+    200: Color.fromARGB(255, 80, 80, 80),
+    300: Color.fromARGB(255, 70, 70, 70),
+    400: Color.fromARGB(255, 60, 60, 60),
+    500: Color.fromARGB(255, 50, 50, 50),
+    600: Color.fromARGB(255, 40, 40, 40),
+    700: Color.fromARGB(255, 30, 30, 30),
+    800: Color.fromARGB(255, 20, 20, 20),
+    900: Color.fromARGB(255, 10, 10, 10),
+  },
+);
+
+// Color getBackgroundColor900() {
+//   return backgroundColor.shade900;
+// }
+
+ColorScheme colorScheme = ColorScheme(
   brightness: Brightness.dark,
   surface: backgroundColor,
+  //
+  surfaceBright: backgroundShade.shade100,
+  surfaceContainer: backgroundShade.shade400,
+  surfaceContainerHigh: backgroundShade.shade500,
+  surfaceContainerHighest: backgroundShade.shade600,
+  surfaceContainerLow: backgroundShade.shade700,
+  surfaceContainerLowest: backgroundShade.shade800,
+  surfaceDim: backgroundShade.shade900,
+  //
   onSurface: textColor,
   primary: primaryColor,
   onPrimary: primaryFgColor,
@@ -43,6 +73,14 @@ ThemeData darkTheme = ThemeData(
     seedColor: colorScheme.primary,
     error: colorScheme.error,
     brightness: colorScheme.brightness,
+    //
+    surfaceBright: colorScheme.surfaceBright,
+    surfaceContainer: colorScheme.surfaceContainer,
+    surfaceContainerHigh: colorScheme.surfaceContainerHigh,
+    surfaceContainerHighest: colorScheme.surfaceContainerHighest,
+    surfaceContainerLow: colorScheme.surfaceContainerLow,
+    surfaceContainerLowest: colorScheme.surfaceContainerLowest,
+    surfaceDim: colorScheme.surfaceDim,
   ),
   appBarTheme: AppBarTheme(
       backgroundColor: colorScheme.surface,
@@ -69,14 +107,22 @@ ThemeData darkTheme = ThemeData(
     },
   ),
   inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: colorScheme.onPrimary,
-    border: InputBorder.none,
+    contentPadding: const EdgeInsets.only(left: 15),
+    hintStyle: TextStyle(
+      color: colorScheme.surfaceBright,
+      fontWeight: FontWeight.w600,
+    ),
     enabledBorder: UnderlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+    ),
+    focusedBorder: UnderlineInputBorder(
+      borderSide: BorderSide(color: backgroundShade.shade50, width: 2),
     ),
   ),
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+  ),
+  dialogTheme: DialogTheme(
+    backgroundColor: colorScheme.surfaceContainerHighest,
   ),
 );

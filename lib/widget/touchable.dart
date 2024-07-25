@@ -53,6 +53,7 @@ class _TouchableButtonState extends State<TouchableButton> {
           duration: widget.duration!,
           opacity: isDown ? widget.opacity! : 1,
           child: Container(
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: widget.color,
               borderRadius: widget.borderRadius,

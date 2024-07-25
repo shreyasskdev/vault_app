@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:Vault/widget/touchable.dart';
@@ -72,34 +73,113 @@ class _CollectionsPageState extends State<CollectionsPage> {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: AlertDialog(
-            content: SizedBox(
-              height: 120,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: "Create a new Album",
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          createNewAlbumDirectory();
-                        },
-                        child: const Text("Create"),
+            shape: SmoothRectangleBorder(
+              borderRadius: SmoothBorderRadius(
+                cornerRadius: 30,
+                cornerSmoothing: 0.6,
+              ),
+            ),
+            contentPadding: const EdgeInsets.all(0),
+            content: ClipSmoothRect(
+              radius: const SmoothBorderRadius.all(
+                SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.6),
+              ),
+              child: SizedBox(
+                height: 150,
+                width: 300,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                      height: 75,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                      child: SizedBox(
+                        height: 43,
+                        child: TextField(
+                            cursorColor:
+                                Theme.of(context).colorScheme.surfaceBright,
+                            controller: _controller,
+                            decoration: const InputDecoration(
+                              hintText: "Create a new Album",
+                            )),
                       ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => context.pop(),
-                        child: const Text("Cancel"),
-                      )
-                    ],
-                  )
-                ],
+                    ),
+                    Container(
+                      height: 75,
+                      color: Theme.of(context).colorScheme.surfaceContainerLow,
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: SizedBox(
+                              height: 75,
+                              child: ClipSmoothRect(
+                                radius: const SmoothBorderRadius.all(
+                                  SmoothRadius(
+                                      cornerRadius: 20, cornerSmoothing: 0.6),
+                                ),
+                                child: TouchableButton(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius:
+                                      const BorderRadius.all(Radius.zero),
+                                  // padding: EdgeInsets.all(15),
+
+                                  onPressed: () {
+                                    createNewAlbumDirectory();
+                                  },
+                                  child: const Text(
+                                    "Create",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 1,
+                            child: SizedBox(
+                              height: 75,
+                              child: ClipSmoothRect(
+                                radius: const SmoothBorderRadius.all(
+                                  SmoothRadius(
+                                      cornerRadius: 20, cornerSmoothing: 0.6),
+                                ),
+                                child: TouchableButton(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderColor: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius:
+                                      const BorderRadius.all(Radius.zero),
+                                  onPressed: () => context.pop(),
+                                  child: const Text(
+                                    "Cancel",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           ),
@@ -154,7 +234,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                 children: [
                   ClipSmoothRect(
                     radius: const SmoothBorderRadius.all(
-                        SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5)),
+                      SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
+                    ),
                     child: AspectRatio(
                       aspectRatio: 1 / 1,
                       child: FutureBuilder<Directory>(
