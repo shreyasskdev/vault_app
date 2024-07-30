@@ -1,4 +1,4 @@
-name: Vault
+name: vault
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -21,6 +21,9 @@ version: 1.0.0+1
 environment:
   sdk: '>=3.4.3 <4.0.0'
 
+enable_lifetime: true
+
+
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
 # consider running `flutter pub upgrade --major-versions`. Alternatively,
@@ -38,7 +41,7 @@ dependencies:
   go_router: ^14.1.4
   google_fonts: any
 
-  image_picker: ^0.8.5+3
+  image_picker: ^1.1.2
   path_provider: ^2.0.11
   name_plus: ^0.0.1
   photo_view: ^0.15.0
@@ -47,6 +50,10 @@ dependencies:
   rust_lib_Vault:
     path: rust_builder
   flutter_rust_bridge: 2.1.0
+
+  # freezed_annotation: "1.0.0"
+  freezed_annotation: ^2.4.4
+
   
 dev_dependencies:
   flutter_test:
@@ -59,10 +66,15 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
 
-  go_router_builder: any
-  build_runner: any
+  go_router_builder: ^2.7.0
+  build_runner: ^2.4.11
   integration_test:
     sdk: flutter
+
+  # freezed: "1.0.0"
+  # freezed: ^2.5.7
+  freezed: ^2.5.2
+  
 
   
 

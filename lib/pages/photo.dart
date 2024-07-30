@@ -1,9 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:Vault/widget/touchable.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
+import 'package:vault/widget/touchable.dart';
 import 'dart:io';
 
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:vault/src/rust/api/file.dart' as api;
 
 class PhotoView extends StatefulWidget {
   final String url;
@@ -15,8 +19,9 @@ class PhotoView extends StatefulWidget {
 }
 
 class _PhotoViewState extends State<PhotoView> {
-  List<FileSystemEntity> files = [];
-  PageController pageController = PageController();
+  late List<String> files = [];
+
+  late final PageController pageController;
 
   @override
   void initState() {
@@ -25,21 +30,20 @@ class _PhotoViewState extends State<PhotoView> {
     pageController = PageController(initialPage: widget.index);
   }
 
-  void getImages() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  void getImages() {
+    // WidgetsFlutterBinding.ensureInitialized();
 
-    try {
-      List<FileSystemEntity> entities = Directory(widget.url).listSync();
-
-      setState(() {
-        files = entities.whereType<File>().toList();
-      });
-    } catch (e) {
-      print('Error: $e');
-    }
+    setState(() {
+      files = api.getImages(dir: widget.url);
+    });
   }
 
-  @override
+  // void getFile() async{
+  //   Uint8List buffer = Uint8List.fromList([]);
+  //   api.getFile(path: "${widget.url}/${files[index]}").then((buffer) {return buffer}),
+
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,12 +73,24 @@ class _PhotoViewState extends State<PhotoView> {
 
           builder: (BuildContext context, int index) {
             return PhotoViewGalleryPageOptions(
-              imageProvider: Image.file(
-                File(files[index].path),
+              // imageProvider: Image.file(
+              //   File("${widget.url}/${files[index]}"),
+              //   fit: BoxFit.contain,
+              //   width: double.infinity,
+              //   errorBuilder: (context, error, stackTrace) {
+              //     debugPrint("Wallet_Error: $error");
+              //     return const Center(
+              //       child: Text("error"),
+              //     );
+              //   },
+              // ).image,
+              imageProvider: Image.memory(
+                Uint8List.fromList(
+                    api.getFile(path: "${widget.url}/${files[index]}")),
                 fit: BoxFit.contain,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) {
-                  print("Wallet_Error: $error");
+                  debugPrint("Wallet_Error: $error");
                   return const Center(
                     child: Text("error"),
                   );
@@ -82,7 +98,7 @@ class _PhotoViewState extends State<PhotoView> {
               ).image,
               initialScale: PhotoViewComputedScale.contained,
               minScale: PhotoViewComputedScale.contained,
-              heroAttributes: PhotoViewHeroAttributes(tag: files[index].path),
+              heroAttributes: PhotoViewHeroAttributes(tag: index),
             );
           },
           itemCount: files.length,

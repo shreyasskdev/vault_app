@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:Vault/utils/filename.dart';
-import 'package:Vault/widget/touchable.dart';
+import 'package:vault/utils/filename.dart';
+import 'package:vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:vault/src/rust/api/file.dart' as api;
 
 class AlbumPage extends StatefulWidget {
   final String name;
@@ -16,7 +18,8 @@ class AlbumPage extends StatefulWidget {
 }
 
 class _AlbumPageState extends State<AlbumPage> {
-  List<FileSystemEntity> files = [];
+  // List<File> files = [];
+  List<String> files = [];
   String photoDirectoryPath = "";
 
   @override // stratup code
@@ -34,11 +37,19 @@ class _AlbumPageState extends State<AlbumPage> {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    if (image == null) {
-      return;
-    }
-    await File(image.path).copy(
-        '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}');
+    if (image == null) return;
+
+    // await File(image.path).copy(
+    //   '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}',
+    // );
+
+    final bytes = await File(image.path).readAsBytes();
+    final Uint8List uint8list = Uint8List.fromList(bytes);
+    await api.saveFile(
+      imageData: uint8list,
+      filePath:
+          '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}',
+    );
 
     getImages();
   }
@@ -49,16 +60,26 @@ class _AlbumPageState extends State<AlbumPage> {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
 
-    try {
-      List<FileSystemEntity> entities =
-          Directory(photoDirectoryPath).listSync();
+    // try {
+    //   List<FileSystemEntity> entities =
+    //       Directory(photoDirectoryPath).listSync();
 
-      setState(() {
-        files = entities.whereType<File>().toList();
-      });
-    } catch (e) {
-      print('Error: $e');
-    }
+    //   setState(() {
+    //     files = entities.whereType<File>().toList();
+    //   });
+    // } catch (e) {
+    //   print('Error: $e');
+    // }
+
+    // await api.getImages(dir: photoDirectoryPath).then((files) {
+    //   setState(() {
+    //     this.files = files;
+    //   });
+    // });
+
+    setState(() {
+      files = api.getImages(dir: photoDirectoryPath);
+    });
   }
 
   @override
@@ -95,7 +116,10 @@ class _AlbumPageState extends State<AlbumPage> {
         ),
         actions: <Widget>[
           TouchableOpacity(
-            onPressed: getImageFromGallery,
+            onPressed: () {
+              getImageFromGallery();
+              HapticFeedback.heavyImpact();
+            },
             child: const Padding(
               padding:
                   EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
@@ -129,14 +153,25 @@ class _AlbumPageState extends State<AlbumPage> {
                   context.push("/photo/$imageUrl/$index");
                 },
                 child: Hero(
-                  tag: files[index].path,
+                  tag: index,
                   child: AspectRatio(
                     aspectRatio: 1 / 1,
-                    child: Image.file(
-                      File(files[index].path),
+                    // child: Image.file(
+                    //   File("$photoDirectoryPath/${files[index]}"),
+                    //   fit: BoxFit.cover,
+                    //   errorBuilder: (context, error, stackTrace) {
+                    //     debugPrint("Wallet_Error: $error");
+                    //     return const Center(
+                    //       child: Text("error"),
+                    //     );
+                    //   },
+                    // ),
+                    child: Image.memory(
+                      Uint8List.fromList(api.getFile(
+                          path: "$photoDirectoryPath/${files[index]}")),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        print("Wallet_Error: $error");
+                        debugPrint("Wallet_Error: $error");
                         return const Center(
                           child: Text("error"),
                         );

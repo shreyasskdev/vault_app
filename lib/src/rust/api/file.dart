@@ -5,6 +5,31 @@
 
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
+part 'file.freezed.dart';
 
-Future<void> getFiles({required String dir}) =>
-    RustLib.instance.api.crateApiFileGetFiles(dir: dir);
+Future<void> createDir({required String dir, required String albumName}) =>
+    RustLib.instance.api.crateApiFileCreateDir(dir: dir, albumName: albumName);
+
+Future<List<String>> getDirs({required String dir}) =>
+    RustLib.instance.api.crateApiFileGetDirs(dir: dir);
+
+List<String> getImages({required String dir}) =>
+    RustLib.instance.api.crateApiFileGetImages(dir: dir);
+
+Uint8List getFile({required String path}) =>
+    RustLib.instance.api.crateApiFileGetFile(path: path);
+
+Future<void> saveFile(
+        {required List<int> imageData, required String filePath}) =>
+    RustLib.instance.api
+        .crateApiFileSaveFile(imageData: imageData, filePath: filePath);
+
+@freezed
+sealed class VaultError with _$VaultError implements FrbException {
+  const VaultError._();
+
+  const factory VaultError.error(
+    String field0,
+  ) = VaultError_Error;
+}

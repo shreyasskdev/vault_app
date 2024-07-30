@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:Vault/widget/touchable.dart';
+import 'package:vault/widget/touchable.dart';
 import 'dart:io';
 
 class PhotoView extends StatefulWidget {

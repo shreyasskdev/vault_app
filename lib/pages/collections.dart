@@ -2,10 +2,13 @@ import 'dart:ui';
 
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:Vault/widget/touchable.dart';
+import 'package:vault/src/rust/api/file.dart';
+import 'package:vault/widget/touchable.dart';
+import 'package:vault/src/rust/api/file.dart' as api;
 import 'dart:io';
 
 class CollectionsPage extends StatefulWidget {
@@ -18,7 +21,7 @@ class CollectionsPage extends StatefulWidget {
 class _CollectionsPageState extends State<CollectionsPage> {
   final _controller = TextEditingController();
 
-  List<Directory> directories = [];
+  List<String> directories = [];
 
   @override // Code to run in startup
   void initState() {
@@ -30,18 +33,21 @@ class _CollectionsPageState extends State<CollectionsPage> {
     WidgetsFlutterBinding.ensureInitialized(); // Required for path_provider
     String directoryName = _controller.text;
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    String newDirectoryPath = '${appDocDir.path}/Collectons/$directoryName';
 
-    try {
-      await Directory(newDirectoryPath).create();
-    } catch (e) {
-      if (e is PathNotFoundException) {
-        await Directory('${appDocDir.path}/Collectons').create();
-        await Directory(newDirectoryPath).create();
-      } else {
-        print('Error creating directory: $e');
-      }
-    }
+    // String newDirectoryPath = '${appDocDir.path}/Collectons/$directoryName';
+    // try {
+    //   await Directory(newDirectoryPath).create();
+    // } catch (e) {
+    //   if (e is PathNotFoundException) {
+    //     await Directory('${appDocDir.path}/Collectons').create();
+    //     await Directory(newDirectoryPath).create();
+    //   } else {
+    //     debugPrint('Error creating directory: $e');
+    //   }
+    // }
+
+    await api.createDir(dir: appDocDir.path, albumName: directoryName);
+
     if (mounted) {
       context.pop();
     }
@@ -55,14 +61,25 @@ class _CollectionsPageState extends State<CollectionsPage> {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String appDirectoryPath = '${appDocDir.path}/Collectons';
 
-    try {
-      List<FileSystemEntity> entities = Directory(appDirectoryPath).listSync();
+    // try {
+    //   List<FileSystemEntity> entities = Directory(appDirectoryPath).listSync();
 
-      setState(() {
-        directories = entities.whereType<Directory>().toList();
+    //   setState(() {
+    //     directories = entities.whereType<Directory>().toList();
+    //   });
+    // } catch (e) {
+    //   // debugPrint('Error: $e');
+    // }
+
+    try {
+      debugPrint(appDirectoryPath);
+      api.getDirs(dir: appDirectoryPath).then((directories) {
+        setState(() {
+          this.directories = directories;
+        });
       });
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -193,12 +210,13 @@ class _CollectionsPageState extends State<CollectionsPage> {
     return Scaffold(
       appBar: AppBar(
         title:
-            const Text("Wallet", style: TextStyle(fontWeight: FontWeight.w600)),
+            const Text("Vault", style: TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         actions: <Widget>[
           TouchableOpacity(
             onPressed: () {
               createNewAlbum(context);
+              HapticFeedback.heavyImpact();
             },
             child: const Padding(
               padding:
@@ -228,65 +246,98 @@ class _CollectionsPageState extends State<CollectionsPage> {
             return GestureDetector(
               onTap: () {
                 context
-                    .push("/album/${directories[index].path.split("/").last}");
+                    .push("/album/${directories[index].split("/").last}")
+                    .then((_) => setState(() => {}));
               },
-              child: Stack(
-                children: [
-                  ClipSmoothRect(
-                    radius: const SmoothBorderRadius.all(
-                      SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: ShapeDecoration(
+                  shape: SmoothRectangleBorder(
+                    // side: const BorderSide(
+                    //   color: Color.fromARGB(255, 135, 135, 135),
+                    //   width: 2,
+                    // ),
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: 30,
+                      cornerSmoothing: 0.5,
                     ),
-                    child: AspectRatio(
+                  ),
+                ),
+                child:
+                    // ClipSmoothRect(
+                    //   radius: const SmoothBorderRadius.all(
+                    //     SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
+                    //   ),
+                    Stack(
+                  children: [
+                    AspectRatio(
                       aspectRatio: 1 / 1,
                       child: FutureBuilder<Directory>(
                         future: getApplicationDocumentsDirectory(),
                         builder: (BuildContext context,
                             AsyncSnapshot<Directory> snapshot) {
                           if (snapshot.hasData) {
-                            String imagePath =
-                                '${snapshot.data!.path}/Collectons/${directories[index].path.split("/").last}/${directories[index].path.split("/").last}.image';
+                            List<String> images = api.getImages(
+                                dir:
+                                    '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}');
+                            if (images.isNotEmpty) {
+                              String imagePath =
+                                  '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}/${images.first}';
 
-                            return Image.file(
-                              File(imagePath),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                print("Wallet_Error: $error");
-                                return Container(
-                                  color: const Color.fromARGB(255, 14, 14, 14),
-                                  child: const Center(
-                                    child: Text("error"),
-                                  ),
-                                );
-                              },
-                            );
+                              return Image.file(
+                                File(imagePath),
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  debugPrint("Vault_Error: $error");
+                                  return Container(
+                                    color:
+                                        const Color.fromARGB(255, 14, 14, 14),
+                                    child: const Center(
+                                      child: Text("error"),
+                                    ),
+                                  );
+                                },
+                              );
+                            } else {
+                              return Container(
+                                color: const Color.fromARGB(255, 14, 14, 14),
+                                child: const Center(
+                                  child: Text("Empty"),
+                                ),
+                              );
+                              ;
+                            }
                           } else {
                             return const CircularProgressIndicator();
                           }
                         },
                       ),
                     ),
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.fromARGB(0, 0, 0, 0),
-                          Color.fromARGB(200, 0, 0, 0)
-                        ],
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.fromARGB(0, 0, 0, 0),
+                            Color.fromARGB(200, 0, 0, 0)
+                          ],
+                        ),
+                      ),
+                      alignment: Alignment.bottomRight,
+                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                      child: Text(
+                        directories[index].split("/").last,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.fade,
+                        maxLines: 1,
+                        softWrap: false,
                       ),
                     ),
-                    alignment: Alignment.bottomRight,
-                    padding: const EdgeInsets.fromLTRB(0, 0, 15, 5),
-                    child: Text(
-                      directories[index].path.split("/").last,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
