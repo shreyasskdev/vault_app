@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -7,7 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:vault/utils/filename.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vault/src/rust/api/file.dart' as api;
+
+import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class AlbumPage extends StatefulWidget {
   final String name;
@@ -17,7 +19,7 @@ class AlbumPage extends StatefulWidget {
   State<AlbumPage> createState() => _AlbumPageState();
 }
 
-class _AlbumPageState extends State<AlbumPage> {
+class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
   // List<File> files = [];
   List<String> files = [];
   String photoDirectoryPath = "";
@@ -37,20 +39,16 @@ class _AlbumPageState extends State<AlbumPage> {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
 
-    if (image == null) return;
-
-    // await File(image.path).copy(
-    //   '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}',
-    // );
+    if (image == null) {
+      debugPrint("No image selected");
+      return;
+    }
 
     final bytes = await File(image.path).readAsBytes();
     final Uint8List uint8list = Uint8List.fromList(bytes);
-    await api.saveFile(
-      imageData: uint8list,
-      filePath:
-          '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}',
-    );
 
+    saveFileWrapper(uint8list,
+        '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}');
     getImages();
   }
 
@@ -60,26 +58,38 @@ class _AlbumPageState extends State<AlbumPage> {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
 
-    // try {
-    //   List<FileSystemEntity> entities =
-    //       Directory(photoDirectoryPath).listSync();
-
-    //   setState(() {
-    //     files = entities.whereType<File>().toList();
-    //   });
-    // } catch (e) {
-    //   print('Error: $e');
-    // }
-
-    // await api.getImages(dir: photoDirectoryPath).then((files) {
-    //   setState(() {
-    //     this.files = files;
-    //   });
-    // });
-
-    setState(() {
-      files = api.getImages(dir: photoDirectoryPath);
+    await getImagesWrapper(photoDirectoryPath).then((value) {
+      setState(() {
+        files = value;
+      });
     });
+  }
+
+  Future<Size> getImageSize(Uint8List imageData) async {
+    final ui.Image image = await decodeImageFromList(imageData);
+    return Size(image.width.toDouble(), image.height.toDouble());
+  }
+
+  Future<Widget> chainedAsyncOperations(index) async {
+    String imagePath = "$photoDirectoryPath/${files[index]}";
+    final imageData = await (getFileWrapper(imagePath));
+    final Size size = await getImageSize(imageData);
+
+    return Image.memory(
+      Uint8List.fromList(imageData),
+      cacheWidth: 200,
+      cacheHeight: ((size.height / size.width) * 200).toInt(),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint("Vault error: INFO: $error");
+        return Container(
+          color: const Color.fromARGB(255, 14, 14, 14),
+          child: const Center(
+            child: Text("Error"),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -156,25 +166,16 @@ class _AlbumPageState extends State<AlbumPage> {
                   tag: index,
                   child: AspectRatio(
                     aspectRatio: 1 / 1,
-                    // child: Image.file(
-                    //   File("$photoDirectoryPath/${files[index]}"),
-                    //   fit: BoxFit.cover,
-                    //   errorBuilder: (context, error, stackTrace) {
-                    //     debugPrint("Wallet_Error: $error");
-                    //     return const Center(
-                    //       child: Text("error"),
-                    //     );
-                    //   },
-                    // ),
-                    child: Image.memory(
-                      Uint8List.fromList(api.getFile(
-                          path: "$photoDirectoryPath/${files[index]}")),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint("Wallet_Error: $error");
-                        return const Center(
-                          child: Text("error"),
-                        );
+                    child: FutureBuilder<Widget>(
+                      future: chainedAsyncOperations(index),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return snapshot.data!;
+                        } else {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
                       },
                     ),
                   ),

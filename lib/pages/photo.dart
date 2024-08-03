@@ -7,7 +7,9 @@ import 'dart:io';
 
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:vault/src/rust/api/file.dart' as api;
+// import 'package:vault/src/rust/api/file.dart' as api;
+
+import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class PhotoView extends StatefulWidget {
   final String url;
@@ -18,7 +20,7 @@ class PhotoView extends StatefulWidget {
   State<PhotoView> createState() => _PhotoViewState();
 }
 
-class _PhotoViewState extends State<PhotoView> {
+class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
   late List<String> files = [];
 
   late final PageController pageController;
@@ -30,12 +32,10 @@ class _PhotoViewState extends State<PhotoView> {
     pageController = PageController(initialPage: widget.index);
   }
 
-  void getImages() {
-    // WidgetsFlutterBinding.ensureInitialized();
-
-    setState(() {
-      files = api.getImages(dir: widget.url);
-    });
+  void getImages() async {
+    await getImagesWrapper(widget.url).then((value) => setState(() {
+          files = value;
+        }));
   }
 
   // void getFile() async{
@@ -72,30 +72,45 @@ class _PhotoViewState extends State<PhotoView> {
               : const BouncingScrollPhysics(),
 
           builder: (BuildContext context, int index) {
-            return PhotoViewGalleryPageOptions(
-              // imageProvider: Image.file(
-              //   File("${widget.url}/${files[index]}"),
-              //   fit: BoxFit.contain,
-              //   width: double.infinity,
-              //   errorBuilder: (context, error, stackTrace) {
-              //     debugPrint("Wallet_Error: $error");
-              //     return const Center(
-              //       child: Text("error"),
-              //     );
-              //   },
-              // ).image,
-              imageProvider: Image.memory(
-                Uint8List.fromList(
-                    api.getFile(path: "${widget.url}/${files[index]}")),
-                fit: BoxFit.contain,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint("Wallet_Error: $error");
-                  return const Center(
-                    child: Text("error"),
-                  );
+            // return PhotoViewGalleryPageOptions(
+            //   // imageProvider: Image.memory(
+            //   //   Uint8List.fromList(
+            //   //       getFileWrapper("${widget.url}/${files[index]}")),
+            //   //   fit: BoxFit.contain,
+            //   //   width: double.infinity,
+            //   //   errorBuilder: (context, error, stackTrace) {
+            //   //     debugPrint("Vault error: INFO: $error");
+            //   //     return const Center(
+            //   //       child: Text("error"),
+            //   //     );
+            //   //   },
+            //   // ).image,
+            //   // imageProvider:,
+            //   initialScale: PhotoViewComputedScale.contained,
+            //   minScale: PhotoViewComputedScale.contained,
+            //   heroAttributes: PhotoViewHeroAttributes(tag: index),
+            // );
+            return PhotoViewGalleryPageOptions.customChild(
+              child: FutureBuilder<Uint8List>(
+                future: getFileWrapper("${widget.url}/${files[index]}"),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Image.memory(
+                      Uint8List.fromList(snapshot.data!),
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint("Vault error: INFO: $error");
+                        return const Center(
+                          child: Text("error"),
+                        );
+                      },
+                    );
+                  } else {
+                    return const Center(child: CircularProgressIndicator());
+                  }
                 },
-              ).image,
+              ),
               initialScale: PhotoViewComputedScale.contained,
               minScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: index),
@@ -103,17 +118,14 @@ class _PhotoViewState extends State<PhotoView> {
           },
           itemCount: files.length,
 
-          // loadingBuilder: (context, event) => Center(
-          //   child: Container(
-          //     width: 20.0,
-          //     height: 20.0,
-          //     child: CircularProgressIndicator(
-          //       value: event == null
-          //           ? 0
-          //           : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-          //     ),
-          //   ),
-          // ),
+          loadingBuilder: (context, event) => Center(
+            child: Container(
+              width: 20.0,
+              height: 20.0,
+              color: const Color.fromARGB(255, 14, 14, 14),
+              child: const CircularProgressIndicator(),
+            ),
+          ),
           // backgroundDecoration: widget.backgroundDecoration,
           pageController: pageController,
           // onPageChanged: onPageChanged,

@@ -1,15 +1,16 @@
 import 'dart:ui';
+import 'package:flutter/widgets.dart';
+import 'dart:ui' as ui;
 
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:vault/src/rust/api/file.dart';
 import 'package:vault/widget/touchable.dart';
-import 'package:vault/src/rust/api/file.dart' as api;
 import 'dart:io';
+
+import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class CollectionsPage extends StatefulWidget {
   const CollectionsPage({super.key});
@@ -18,7 +19,8 @@ class CollectionsPage extends StatefulWidget {
   State<CollectionsPage> createState() => _CollectionsPageState();
 }
 
-class _CollectionsPageState extends State<CollectionsPage> {
+class _CollectionsPageState extends State<CollectionsPage>
+    with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
 
   List<String> directories = [];
@@ -34,19 +36,7 @@ class _CollectionsPageState extends State<CollectionsPage> {
     String directoryName = _controller.text;
     Directory appDocDir = await getApplicationDocumentsDirectory();
 
-    // String newDirectoryPath = '${appDocDir.path}/Collectons/$directoryName';
-    // try {
-    //   await Directory(newDirectoryPath).create();
-    // } catch (e) {
-    //   if (e is PathNotFoundException) {
-    //     await Directory('${appDocDir.path}/Collectons').create();
-    //     await Directory(newDirectoryPath).create();
-    //   } else {
-    //     debugPrint('Error creating directory: $e');
-    //   }
-    // }
-
-    await api.createDir(dir: appDocDir.path, albumName: directoryName);
+    createDirWrapper(appDocDir.path, directoryName);
 
     if (mounted) {
       context.pop();
@@ -61,25 +51,52 @@ class _CollectionsPageState extends State<CollectionsPage> {
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String appDirectoryPath = '${appDocDir.path}/Collectons';
 
-    // try {
-    //   List<FileSystemEntity> entities = Directory(appDirectoryPath).listSync();
-
-    //   setState(() {
-    //     directories = entities.whereType<Directory>().toList();
-    //   });
-    // } catch (e) {
-    //   // debugPrint('Error: $e');
-    // }
-
-    try {
-      debugPrint(appDirectoryPath);
-      api.getDirs(dir: appDirectoryPath).then((directories) {
-        setState(() {
-          this.directories = directories;
-        });
+    getDirsWrapper(appDirectoryPath).then((directories) {
+      setState(() {
+        this.directories = directories;
       });
-    } catch (e) {
-      debugPrint('Error: $e');
+    });
+  }
+
+  Future<Size> getImageSize(Uint8List imageData) async {
+    final ui.Image image = await decodeImageFromList(imageData);
+    return Size(image.width.toDouble(), image.height.toDouble());
+  }
+
+  Future<Widget> chainedAsyncOperations(index) async {
+    Directory appDir = await getApplicationDocumentsDirectory();
+
+    List<String> images = await getImagesWrapper(
+      '${appDir.path}/Collectons/${directories[index].split("/").last}',
+    );
+
+    if (images.isNotEmpty) {
+      String imagePath =
+          '${appDir.path}/Collectons/${directories[index].split("/").last}/${images.first}';
+      final imageData = await (getFileWrapper(imagePath));
+      final Size size = await getImageSize(imageData);
+      return Image.memory(
+        Uint8List.fromList(imageData),
+        cacheWidth: 200,
+        cacheHeight: ((size.height / size.width) * 200).toInt(),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint("Vault error: INFO: $error");
+          return Container(
+            color: const Color.fromARGB(255, 14, 14, 14),
+            child: const Center(
+              child: Text("Error"),
+            ),
+          );
+        },
+      );
+    } else {
+      return Container(
+        color: const Color.fromARGB(255, 14, 14, 14),
+        child: const Center(
+          child: Text("Empty"),
+        ),
+      );
     }
   }
 
@@ -114,6 +131,8 @@ class _CollectionsPageState extends State<CollectionsPage> {
                       child: SizedBox(
                         height: 43,
                         child: TextField(
+                            autofocus: true,
+                            autocorrect: true,
                             cursorColor:
                                 Theme.of(context).colorScheme.surfaceBright,
                             controller: _controller,
@@ -271,48 +290,60 @@ class _CollectionsPageState extends State<CollectionsPage> {
                     Stack(
                   children: [
                     AspectRatio(
-                      aspectRatio: 1 / 1,
-                      child: FutureBuilder<Directory>(
-                        future: getApplicationDocumentsDirectory(),
-                        builder: (BuildContext context,
-                            AsyncSnapshot<Directory> snapshot) {
-                          if (snapshot.hasData) {
-                            List<String> images = api.getImages(
-                                dir:
-                                    '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}');
-                            if (images.isNotEmpty) {
-                              String imagePath =
-                                  '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}/${images.first}';
-
-                              return Image.file(
-                                File(imagePath),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  debugPrint("Vault_Error: $error");
-                                  return Container(
-                                    color:
-                                        const Color.fromARGB(255, 14, 14, 14),
-                                    child: const Center(
-                                      child: Text("error"),
-                                    ),
-                                  );
-                                },
-                              );
+                        aspectRatio: 1 / 1,
+                        child: FutureBuilder<Widget>(
+                          future: chainedAsyncOperations(index),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasData) {
+                              return snapshot.data!;
                             } else {
-                              return Container(
-                                color: const Color.fromARGB(255, 14, 14, 14),
-                                child: const Center(
-                                  child: Text("Empty"),
-                                ),
-                              );
-                              ;
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             }
-                          } else {
-                            return const CircularProgressIndicator();
-                          }
-                        },
-                      ),
-                    ),
+                          },
+                        )
+                        // child: FutureBuilder<Directory>(
+                        //   future: getApplicationDocumentsDirectory(),
+                        //   builder: (BuildContext context,
+                        //       AsyncSnapshot<Directory> snapshot) {
+                        //     if (snapshot.hasData) {
+                        //       List<String> images = getImagesWrapper(
+                        //         '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}',
+                        //       );
+                        //       if (images.isNotEmpty) {
+                        //         String imagePath =
+                        //             '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}/${images.first}';
+
+                        //         return Image.memory(
+                        //           Uint8List.fromList(getFileWrapper(imagePath)),
+                        //           fit: BoxFit.cover,
+                        //           // cacheWidth: 200,
+                        //           // cacheHeight: 200,
+                        //           errorBuilder: (context, error, stackTrace) {
+                        //             debugPrint("Vault error: INFO: $error");
+                        //             return Container(
+                        //               color:
+                        //                   const Color.fromARGB(255, 14, 14, 14),
+                        //               child: const Center(
+                        //                 child: Text("Error"),
+                        //               ),
+                        //             );
+                        //           },
+                        //         );
+                        //       } else {
+                        //         return Container(
+                        //           color: const Color.fromARGB(255, 14, 14, 14),
+                        //           child: const Center(
+                        //             child: Text("Empty"),
+                        //           ),
+                        //         );
+                        //       }
+                        //     } else {
+                        //       return const CircularProgressIndicator();
+                        //     }
+                        //   },
+                        // ),
+                        ),
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(

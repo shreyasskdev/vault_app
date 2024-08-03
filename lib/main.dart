@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
-
 import 'themes/dark_theme.dart';
 import 'themes/light_theme.dart';
 
@@ -33,8 +33,12 @@ final GoRouter _router = GoRouter(
   routes: [
     GoRoute(
       path: "/",
-      builder: (context, state) => const CollectionsPage(),
+      builder: (context, state) => const Password(),
       routes: [
+        GoRoute(
+          path: "collections",
+          builder: (context, state) => const CollectionsPage(),
+        ),
         GoRoute(
           path: "album/:name",
           builder: (context, state) => AlbumPage(

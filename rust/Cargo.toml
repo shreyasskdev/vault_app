@@ -8,3 +8,15 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 flutter_rust_bridge = "=2.1.0"
+
+aes = "0.7"                # AES encryption
+block-modes = "0.8"        # Block cipher modes (e.g., CBC mode)
+rand = "0.8"               # For generating random IV
+# hex = "0.4"                # Optional: For easier handling of binary data as hex
+
+
+pbkdf2 = "0.12.2"          # For password generation
+sha2 = "0.10.2"
+
+lazy_static = "1.4.0"
+zeroize = { version = "1.5", features = ["zeroize_derive"] }

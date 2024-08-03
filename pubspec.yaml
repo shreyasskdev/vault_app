@@ -21,7 +21,6 @@ version: 1.0.0+1
 environment:
   sdk: '>=3.4.3 <4.0.0'
 
-enable_lifetime: true
 
 
 # Dependencies specify other packages that your package needs in order to work.

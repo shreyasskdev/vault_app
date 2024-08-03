@@ -72,6 +72,8 @@ ThemeData darkTheme = ThemeData(
     seedColor: colorScheme.primary,
     error: colorScheme.error,
     brightness: colorScheme.brightness,
+
+    primary: colorScheme.primary,
     //
     surfaceBright: colorScheme.surfaceBright,
     surfaceContainer: colorScheme.surfaceContainer,
