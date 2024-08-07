@@ -1,8 +1,8 @@
 // file manipulation
 use std::{
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io::{self, BufReader, Read, Write},
-    path::Path,
+    path::{self, Path},
 };
 
 // encryption
@@ -12,12 +12,16 @@ use block_modes::{BlockMode, Cbc};
 
 // key generation
 use pbkdf2::pbkdf2_hmac;
+use rand::Error;
 use sha2::Sha256;
 
 // key memory safety
 use lazy_static::lazy_static;
 use std::sync::RwLock;
 use zeroize::{Zeroize, ZeroizeOnDrop};
+
+use blurhash::encode;
+use image::{GenericImageView, EncodableLayout};
 
 // Define an alias for the AES-256-CBC encryption mode
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
@@ -118,10 +122,21 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
         }
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
-
 }
 
 pub fn save_file(image_data: Vec<u8>, file_path: String) -> Result<(), VaultError> {
+    match encode_blurhash(image_data.clone(), 4, 4) {
+        Ok(value) => {
+            let path = Path::new(file_path.as_str());
+            let mut file = OpenOptions::new()
+                                        .append(true)
+                                        .create(true)
+                                        .open(path.parent().unwrap().join("hash"))
+                                        .unwrap();
+            writeln!(file, "\"{}\": \"{}\"", path.file_name().unwrap().to_str().unwrap(), value).unwrap();
+        },
+        Err(e) => return Err(e),
+    }
     let encrypted_data = encrypt_data(&image_data)?;
 
     let path = Path::new(&file_path);
@@ -203,4 +218,14 @@ fn get_crypto_params() -> Result<Option<([u8; KEY_LEN], [u8; IV_LEN])>, VaultErr
         },
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
+}
+
+// Blur hash functions ----------------------------------------
+
+
+fn encode_blurhash(image_data: Vec<u8>, components_x: u32, components_y: u32) -> Result<String, VaultError> {
+    let img = image::load_from_memory(&image_data).unwrap();
+    let (width, height) = img.dimensions();
+    let blurhash = encode(components_x, components_y, width, height, img.to_rgba8().as_bytes()).unwrap();
+    Ok(blurhash)
 }

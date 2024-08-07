@@ -158,9 +158,9 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
             children: [
               GestureDetector(
                 onTap: () {
-                  String imageUrl =
+                  final String imageUrl =
                       Uri.encodeQueryComponent(photoDirectoryPath);
-                  context.push("/photo/$imageUrl/$index");
+                  context.push("/photo/$imageUrl/$index/${files.length}");
                 },
                 child: Hero(
                   tag: index,

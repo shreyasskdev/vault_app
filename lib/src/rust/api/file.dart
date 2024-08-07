@@ -8,7 +8,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'file.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `decrypt_data`, `derive_key_and_iv`, `encrypt_data`, `get_crypto_params`
+// These functions are ignored because they are not marked as `pub`: `decrypt_data`, `derive_key_and_iv`, `encode_blurhash`, `encrypt_data`, `get_crypto_params`
 // These types are ignored because they are not used by any `pub` functions: `CRYPTO_PARAMS`, `CryptoParams`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `initialize`, `zeroize`
 

@@ -46,12 +46,13 @@ final GoRouter _router = GoRouter(
           ),
         ),
         GoRoute(
-          path: "photo/:url/:index",
+          path: "photo/:url/:index/:count",
           pageBuilder: (context, state) {
             return CustomTransitionPage(
               child: PhotoView(
                 url: state.pathParameters["url"]!,
                 index: int.parse(state.pathParameters["index"]!),
+                count: int.parse(state.pathParameters["count"]!),
               ),
               transitionsBuilder:
                   (context, animation, secondaryAnimation, child) {

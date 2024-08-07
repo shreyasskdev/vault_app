@@ -14,35 +14,47 @@ import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 class PhotoView extends StatefulWidget {
   final String url;
   final int index;
-  const PhotoView({super.key, required this.url, required this.index});
+  final int count;
+  const PhotoView(
+      {super.key, required this.url, required this.index, required this.count});
 
   @override
   State<PhotoView> createState() => _PhotoViewState();
 }
 
 class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
-  late List<String> files = [];
-
   late final PageController pageController;
 
   @override
   void initState() {
     super.initState();
-    getImages();
+    // getImages();
     pageController = PageController(initialPage: widget.index);
   }
 
-  void getImages() async {
-    await getImagesWrapper(widget.url).then((value) => setState(() {
-          files = value;
-        }));
-  }
-
-  // void getFile() async{
-  //   Uint8List buffer = Uint8List.fromList([]);
-  //   api.getFile(path: "${widget.url}/${files[index]}").then((buffer) {return buffer}),
-
+  // void getImages() async {
+  //   await getImagesWrapper(widget.url).then((value) => setState(() {
+  //         files = value;
+  //       }));
   // }
+
+  Future<Widget> chainedAsyncOperations(index) async {
+    final images = await getImagesWrapper(widget.url);
+    Uint8List imageData =
+        await getFileWrapper("${widget.url}/${images[index]}");
+
+    return Image.memory(
+      Uint8List.fromList(imageData),
+      fit: BoxFit.contain,
+      width: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint("Vault error: INFO: $error");
+        return const Center(
+          child: Text("error"),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,51 +84,45 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
               : const BouncingScrollPhysics(),
 
           builder: (BuildContext context, int index) {
-            // return PhotoViewGalleryPageOptions(
-            //   // imageProvider: Image.memory(
-            //   //   Uint8List.fromList(
-            //   //       getFileWrapper("${widget.url}/${files[index]}")),
-            //   //   fit: BoxFit.contain,
-            //   //   width: double.infinity,
-            //   //   errorBuilder: (context, error, stackTrace) {
-            //   //     debugPrint("Vault error: INFO: $error");
-            //   //     return const Center(
-            //   //       child: Text("error"),
-            //   //     );
-            //   //   },
-            //   // ).image,
-            //   // imageProvider:,
-            //   initialScale: PhotoViewComputedScale.contained,
-            //   minScale: PhotoViewComputedScale.contained,
-            //   heroAttributes: PhotoViewHeroAttributes(tag: index),
-            // );
             return PhotoViewGalleryPageOptions.customChild(
-              child: FutureBuilder<Uint8List>(
-                future: getFileWrapper("${widget.url}/${files[index]}"),
+              child: FutureBuilder<Widget>(
+                future: chainedAsyncOperations(index),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
-                    return Image.memory(
-                      Uint8List.fromList(snapshot.data!),
-                      fit: BoxFit.contain,
-                      width: double.infinity,
-                      errorBuilder: (context, error, stackTrace) {
-                        debugPrint("Vault error: INFO: $error");
-                        return const Center(
-                          child: Text("error"),
-                        );
-                      },
-                    );
+                    return snapshot.data!;
                   } else {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
                   }
                 },
               ),
+              // child: FutureBuilder<Uint8List>(
+              //   future: getFileWrapper("${widget.url}/${files[index]}"),
+              //   builder: (context, snapshot) {
+              //     if (snapshot.hasData) {
+              //       return Image.memory(
+              //         Uint8List.fromList(snapshot.data!),
+              //         fit: BoxFit.contain,
+              //         width: double.infinity,
+              //         errorBuilder: (context, error, stackTrace) {
+              //           debugPrint("Vault error: INFO: $error");
+              //           return const Center(
+              //             child: Text("error"),
+              //           );
+              //         },
+              //       );
+              //     } else {
+              //       return const Center(child: CircularProgressIndicator());
+              //     }
+              //   },
+              // ),
               initialScale: PhotoViewComputedScale.contained,
               minScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: index),
             );
           },
-          itemCount: files.length,
+          itemCount: widget.count,
 
           loadingBuilder: (context, event) => Center(
             child: Container(
@@ -128,6 +134,7 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
           ),
           // backgroundDecoration: widget.backgroundDecoration,
           pageController: pageController,
+          // pageController: PageController(initialPage: 5),
           // onPageChanged: onPageChanged,
         ),
         if (Platform.isFuchsia ||
