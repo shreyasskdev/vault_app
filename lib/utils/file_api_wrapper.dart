@@ -8,7 +8,7 @@ import 'package:vault/src/rust/api/file.dart' as api;
 import 'package:vault/src/rust/frb_generated.dart';
 
 mixin FileApiWrapper {
-  void createDirWrapper(path, albumname) async {
+  Future<void> createDirWrapper(path, albumname) async {
     try {
       await api.createDir(dir: path, albumName: albumname);
     } catch (e) {
@@ -25,26 +25,30 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<List<String>> getImagesWrapper(path) async {
+  Future<Map<String, String>> getImagesWrapper(path) async {
     try {
       return await api.getImages(dir: path);
     } catch (e) {
       debugPrint("Vault error: WARN: $e");
-      return List.empty();
+      return {};
     }
   }
 
-  // Future<Uint8List> getFileWrapper(path) async {
-  //   return await api.getFile(path: path).then((value) => value).catchError((e) {
-  //     debugPrint(
-  //         "Vault error: WARN: Encrpytion error (wrong password): ${e.toString()}");
-  //     return Uint8List.fromList([]);
-  //   });
-  // }
-  // This function will run in the isolate
+  Future<Map<String, String>?> getAlbumThumbWrapper(dir) async {
+    try {
+      return await api.getAlbumThumb(dir: dir);
+    } catch (e) {
+      debugPrint("Vault error: WARN: $e");
+      return {};
+    }
+  }
 
   Future<Uint8List> getFileWrapper(String path) async {
     return await compute(_isolateGetFile, path);
+  }
+
+  Future<Uint8List> getFileThumbWrapper(String path) async {
+    return await compute(_isolateGetFileThumb, path);
   }
 
   Future<void> saveFileWrapper(data, path) async {
@@ -69,12 +73,23 @@ mixin FileApiWrapper {
 Future<Uint8List> _isolateGetFile(String path) async {
   await RustLib.init();
 
-  try {
-    final value = await api.getFile(path: path);
-    return value;
-  } catch (e) {
+  Uint8List value =
+      await api.getFile(path: path).then((value) => value).catchError((e) {
     debugPrint(
         "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
     return Uint8List.fromList([]);
-  }
+  });
+  return value;
+}
+
+Future<Uint8List> _isolateGetFileThumb(String path) async {
+  await RustLib.init();
+
+  Uint8List value =
+      await api.getFileThumb(path: path).then((value) => value).catchError((e) {
+    debugPrint(
+        "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
+    return Uint8List.fromList([]);
+  });
+  return value;
 }

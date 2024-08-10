@@ -4,11 +4,10 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
+import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
-part 'file.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `decrypt_data`, `derive_key_and_iv`, `encode_blurhash`, `encrypt_data`, `get_crypto_params`
+// These functions are ignored because they are not marked as `pub`: `cache_image`, `decrypt_data`, `derive_key_and_iv`, `encrypt_data`, `get_crypto_params`
 // These types are ignored because they are not used by any `pub` functions: `CRYPTO_PARAMS`, `CryptoParams`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `initialize`, `zeroize`
 
@@ -18,8 +17,14 @@ Future<void> createDir({required String dir, required String albumName}) =>
 Future<List<String>> getDirs({required String dir}) =>
     RustLib.instance.api.crateApiFileGetDirs(dir: dir);
 
-Future<List<String>> getImages({required String dir}) =>
+Future<Map<String, String>> getImages({required String dir}) =>
     RustLib.instance.api.crateApiFileGetImages(dir: dir);
+
+Future<Map<String, String>?> getAlbumThumb({required String dir}) =>
+    RustLib.instance.api.crateApiFileGetAlbumThumb(dir: dir);
+
+Future<Uint8List> getFileThumb({required String path}) =>
+    RustLib.instance.api.crateApiFileGetFileThumb(path: path);
 
 Future<Uint8List> getFile({required String path}) =>
     RustLib.instance.api.crateApiFileGetFile(path: path);
@@ -31,12 +36,3 @@ Future<void> saveFile(
 
 Future<bool> setCryptoParams({required String password}) =>
     RustLib.instance.api.crateApiFileSetCryptoParams(password: password);
-
-@freezed
-sealed class VaultError with _$VaultError implements FrbException {
-  const VaultError._();
-
-  const factory VaultError.error(
-    String field0,
-  ) = VaultError_Error;
-}

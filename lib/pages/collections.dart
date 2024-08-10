@@ -1,10 +1,11 @@
 import 'dart:ui';
-import 'package:flutter/widgets.dart';
+// import 'package:flutter/widgets.dart';
 import 'dart:ui' as ui;
 
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/widget/touchable.dart';
@@ -23,74 +24,78 @@ class _CollectionsPageState extends State<CollectionsPage>
     with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
 
-  List<String> directories = [];
+  List<String>? directories;
+  // Map<String, String>? files;
+  String? appDirectoryPath;
+  // String? imagePath, blurhash;
+  Map<String, String>? imageValue;
 
   @override // Code to run in startup
   void initState() {
     super.initState();
-    getDirs();
+    init();
   }
 
-  void createNewAlbumDirectory() async {
-    WidgetsFlutterBinding.ensureInitialized(); // Required for path_provider
-    String directoryName = _controller.text;
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-
-    createDirWrapper(appDocDir.path, directoryName);
-
-    if (mounted) {
-      context.pop();
-    }
-    getDirs();
-    _controller.text = "";
+  Future<void> init() async {
+    await initAppDir();
+    await getDirs();
+    // await getImagePath(appDirectoryPath);
   }
 
-  void getDirs() async {
+  Future<void> initAppDir() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await getApplicationDocumentsDirectory().then((dir) {
+      setState(() {
+        appDirectoryPath = '${dir.path}/Collections';
+      });
+    });
+  }
 
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String appDirectoryPath = '${appDocDir.path}/Collectons';
+  Future<void> getDirs() async {
+    if (appDirectoryPath == null) await initAppDir();
 
-    getDirsWrapper(appDirectoryPath).then((directories) {
+    await getDirsWrapper(appDirectoryPath).then((directories) {
       setState(() {
         this.directories = directories;
       });
     });
   }
 
-  Future<Size> getImageSize(Uint8List imageData) async {
-    final ui.Image image = await decodeImageFromList(imageData);
-    return Size(image.width.toDouble(), image.height.toDouble());
+  // Future<void> getImages(index) async {
+  //   if (appDirectoryPath == null) await initAppDir();
+  //   if (directories == null) await getDirs();
+  //   if (directories != null && directories!.isNotEmpty) {
+  //     await getImagesWrapper(
+  //       '$appDirectoryPath/${directories?[index].split("/").last}',
+  //     ).then((value) {
+  //       setState(() {
+  //         files = value;
+  //       });
+  //     });
+  //   }
+  // }
+
+  Future<void> getImagePath(dir) async {
+    if (dir == null) return;
+    if (imageValue != null) return;
+    await getAlbumThumbWrapper(dir).then((value) {
+      setState(() {
+        if (value == null) {
+          imageValue = {};
+          return;
+        }
+        imageValue = value;
+      });
+    });
   }
 
   Future<Widget> chainedAsyncOperations(index) async {
-    Directory appDir = await getApplicationDocumentsDirectory();
+    if (appDirectoryPath == null) await initAppDir();
+    if (imageValue == null) {
+      await getImagePath("$appDirectoryPath/${directories?[index]}");
+    }
 
-    List<String> images = await getImagesWrapper(
-      '${appDir.path}/Collectons/${directories[index].split("/").last}',
-    );
-
-    if (images.isNotEmpty) {
-      String imagePath =
-          '${appDir.path}/Collectons/${directories[index].split("/").last}/${images.first}';
-      final imageData = await (getFileWrapper(imagePath));
-      final Size size = await getImageSize(imageData);
-      return Image.memory(
-        Uint8List.fromList(imageData),
-        cacheWidth: 200,
-        cacheHeight: ((size.height / size.width) * 200).toInt(),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          debugPrint("Vault error: INFO: $error");
-          return Container(
-            color: const Color.fromARGB(255, 14, 14, 14),
-            child: const Center(
-              child: Text("Error"),
-            ),
-          );
-        },
-      );
-    } else {
+    if (imageValue!.isEmpty) {
       return Container(
         color: const Color.fromARGB(255, 14, 14, 14),
         child: const Center(
@@ -98,6 +103,38 @@ class _CollectionsPageState extends State<CollectionsPage>
         ),
       );
     }
+
+    Uint8List imageData = await getFileThumbWrapper(
+        "$appDirectoryPath/${directories?[index]}/${imageValue!.keys.first}");
+
+    return Image.memory(
+      Uint8List.fromList(imageData),
+      // cacheWidth: 200,
+      // cacheHeight: ((size.height / size.width) * 200).toInt(),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint("Vault error: INFO: $error");
+        return Container(
+          color: const Color.fromARGB(255, 14, 14, 14),
+          child: const Center(
+            child: Text("Error"),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> createNewAlbumDirectory() async {
+    if (appDirectoryPath == null) await initAppDir();
+
+    String directoryName = _controller.text;
+    createDirWrapper(appDirectoryPath, directoryName);
+
+    if (mounted) {
+      context.pop();
+    }
+    getDirs();
+    _controller.text = "";
   }
 
   void createNewAlbum(context) {
@@ -226,6 +263,7 @@ class _CollectionsPageState extends State<CollectionsPage>
 
   @override
   Widget build(BuildContext context) {
+    if (directories == null) return Container(child: Text("Loading"));
     return Scaffold(
       appBar: AppBar(
         title:
@@ -260,12 +298,12 @@ class _CollectionsPageState extends State<CollectionsPage>
             mainAxisSpacing: 5,
             crossAxisSpacing: 5,
           ),
-          itemCount: directories.length,
+          itemCount: directories?.length,
           itemBuilder: (BuildContext context, int index) {
             return GestureDetector(
               onTap: () {
                 context
-                    .push("/album/${directories[index].split("/").last}")
+                    .push("/album/${directories?[index].split("/").last}")
                     .then((_) => setState(() => {}));
               },
               child: Container(
@@ -290,60 +328,37 @@ class _CollectionsPageState extends State<CollectionsPage>
                     Stack(
                   children: [
                     AspectRatio(
-                        aspectRatio: 1 / 1,
-                        child: FutureBuilder<Widget>(
-                          future: chainedAsyncOperations(index),
-                          builder: (context, snapshot) {
-                            if (snapshot.hasData) {
-                              return snapshot.data!;
+                      aspectRatio: 1 / 1,
+                      child: FutureBuilder<Widget>(
+                        future: chainedAsyncOperations(index),
+                        builder: (context, snapshot) {
+                          Widget child;
+                          if (snapshot.hasData) {
+                            child = SizedBox.expand(child: snapshot.data!);
+                          } else {
+                            if (imageValue != null) {
+                              child = BlurHash(
+                                hash: imageValue!.values.first,
+                              );
                             } else {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              child = Text("Empty");
                             }
-                          },
-                        )
-                        // child: FutureBuilder<Directory>(
-                        //   future: getApplicationDocumentsDirectory(),
-                        //   builder: (BuildContext context,
-                        //       AsyncSnapshot<Directory> snapshot) {
-                        //     if (snapshot.hasData) {
-                        //       List<String> images = getImagesWrapper(
-                        //         '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}',
-                        //       );
-                        //       if (images.isNotEmpty) {
-                        //         String imagePath =
-                        //             '${snapshot.data!.path}/Collectons/${directories[index].split("/").last}/${images.first}';
-
-                        //         return Image.memory(
-                        //           Uint8List.fromList(getFileWrapper(imagePath)),
-                        //           fit: BoxFit.cover,
-                        //           // cacheWidth: 200,
-                        //           // cacheHeight: 200,
-                        //           errorBuilder: (context, error, stackTrace) {
-                        //             debugPrint("Vault error: INFO: $error");
-                        //             return Container(
-                        //               color:
-                        //                   const Color.fromARGB(255, 14, 14, 14),
-                        //               child: const Center(
-                        //                 child: Text("Error"),
-                        //               ),
-                        //             );
-                        //           },
-                        //         );
-                        //       } else {
-                        //         return Container(
-                        //           color: const Color.fromARGB(255, 14, 14, 14),
-                        //           child: const Center(
-                        //             child: Text("Empty"),
-                        //           ),
-                        //         );
-                        //       }
-                        //     } else {
-                        //       return const CircularProgressIndicator();
-                        //     }
-                        //   },
-                        // ),
-                        ),
+                          }
+                          // return child;
+                          return AnimatedSwitcher(
+                            transitionBuilder:
+                                (Widget child, Animation<double> animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              );
+                            },
+                            duration: const Duration(milliseconds: 200),
+                            child: child,
+                          );
+                        },
+                      ),
+                    ),
                     Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -358,7 +373,7 @@ class _CollectionsPageState extends State<CollectionsPage>
                       alignment: Alignment.bottomRight,
                       padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
                       child: Text(
-                        directories[index].split("/").last,
+                        directories![index].split("/").last,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                         ),

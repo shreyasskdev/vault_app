@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -21,7 +22,7 @@ class AlbumPage extends StatefulWidget {
 
 class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
   // List<File> files = [];
-  List<String> files = [];
+  Map<String, String> files = {};
   String photoDirectoryPath = "";
 
   @override // stratup code
@@ -34,7 +35,7 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     WidgetsFlutterBinding.ensureInitialized();
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    String directory = '${appDocDir.path}/Collectons';
+    String directory = '${appDocDir.path}/Collections';
 
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -56,7 +57,7 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     WidgetsFlutterBinding.ensureInitialized();
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    photoDirectoryPath = '${appDocDir.path}/Collectons/${widget.name}';
+    photoDirectoryPath = '${appDocDir.path}/Collections/${widget.name}';
 
     await getImagesWrapper(photoDirectoryPath).then((value) {
       setState(() {
@@ -65,20 +66,14 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     });
   }
 
-  Future<Size> getImageSize(Uint8List imageData) async {
-    final ui.Image image = await decodeImageFromList(imageData);
-    return Size(image.width.toDouble(), image.height.toDouble());
-  }
-
   Future<Widget> chainedAsyncOperations(index) async {
-    String imagePath = "$photoDirectoryPath/${files[index]}";
-    final imageData = await (getFileWrapper(imagePath));
-    final Size size = await getImageSize(imageData);
+    String imagePath = "$photoDirectoryPath/${files.keys.toList()[index]}";
+    final imageData = await (getFileThumbWrapper(imagePath));
 
     return Image.memory(
       Uint8List.fromList(imageData),
-      cacheWidth: 200,
-      cacheHeight: ((size.height / size.width) * 200).toInt(),
+      // cacheWidth: 200,
+      // cacheHeight: ((size.height / size.width) * 200).toInt(),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         debugPrint("Vault error: INFO: $error");
@@ -169,13 +164,23 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
                     child: FutureBuilder<Widget>(
                       future: chainedAsyncOperations(index),
                       builder: (context, snapshot) {
+                        Widget child;
                         if (snapshot.hasData) {
-                          return snapshot.data!;
+                          child = SizedBox.expand(child: snapshot.data!);
                         } else {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          child = BlurHash(hash: files.values.toList()[index]);
                         }
+                        return AnimatedSwitcher(
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          duration: const Duration(milliseconds: 200),
+                          child: child,
+                        );
                       },
                     ),
                   ),
