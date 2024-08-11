@@ -25,7 +25,7 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<Map<String, String>> getImagesWrapper(path) async {
+  Future<Map<String, (String, double)>> getImagesWrapper(path) async {
     try {
       return await api.getImages(dir: path);
     } catch (e) {
@@ -34,7 +34,7 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<Map<String, String>?> getAlbumThumbWrapper(dir) async {
+  Future<Map<String, (String, double)>?> getAlbumThumbWrapper(dir) async {
     try {
       print(dir);
       return await api.getAlbumThumb(dir: dir);
@@ -69,6 +69,16 @@ mixin FileApiWrapper {
       debugPrint("Vault error: WARN: $e");
       return false;
     });
+  }
+
+  List<Map<String, (String, double)>> sortMapToList(
+      Map<String, (String, double)> inputMap) {
+    // Convert the map entries to a list and sort by keys
+    List<MapEntry<String, (String, double)>> sortedEntries =
+        inputMap.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+
+    // Convert each sorted entry to a Map and return as a List
+    return sortedEntries.map((entry) => {entry.key: entry.value}).toList();
   }
 }
 Future<Uint8List> _isolateGetFile(String path) async {

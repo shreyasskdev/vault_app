@@ -22,7 +22,7 @@ class AlbumPage extends StatefulWidget {
 
 class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
   // List<File> files = [];
-  Map<String, String> files = {};
+  List<Map<String, (String, double)>> files = [];
   String photoDirectoryPath = "";
 
   @override // stratup code
@@ -61,13 +61,13 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
 
     await getImagesWrapper(photoDirectoryPath).then((value) {
       setState(() {
-        files = value;
+        files = sortMapToList(value);
       });
     });
   }
 
   Future<Widget> chainedAsyncOperations(index) async {
-    String imagePath = "$photoDirectoryPath/${files.keys.toList()[index]}";
+    String imagePath = "$photoDirectoryPath/${files[index].keys.first}";
     final imageData = await (getFileThumbWrapper(imagePath));
 
     return Image.memory(
@@ -168,7 +168,7 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
                         if (snapshot.hasData) {
                           child = SizedBox.expand(child: snapshot.data!);
                         } else {
-                          child = BlurHash(hash: files.values.toList()[index]);
+                          child = BlurHash(hash: files[index].values.last.$1);
                         }
                         return AnimatedSwitcher(
                           transitionBuilder:

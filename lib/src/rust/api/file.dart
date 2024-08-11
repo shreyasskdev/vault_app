@@ -17,10 +17,10 @@ Future<void> createDir({required String dir, required String albumName}) =>
 Future<List<String>> getDirs({required String dir}) =>
     RustLib.instance.api.crateApiFileGetDirs(dir: dir);
 
-Future<Map<String, String>> getImages({required String dir}) =>
+Future<Map<String, (String, double)>> getImages({required String dir}) =>
     RustLib.instance.api.crateApiFileGetImages(dir: dir);
 
-Future<Map<String, String>?> getAlbumThumb({required String dir}) =>
+Future<Map<String, (String, double)>?> getAlbumThumb({required String dir}) =>
     RustLib.instance.api.crateApiFileGetAlbumThumb(dir: dir);
 
 Future<Uint8List> getFileThumb({required String path}) =>

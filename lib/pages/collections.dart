@@ -26,7 +26,7 @@ class _CollectionsPageState extends State<CollectionsPage>
 
   List<String>? directories;
   String? appDirectoryPath;
-  List<Map<String, String>?>? imageValue;
+  List<Map<String, (String, double)>?>? imageValue;
 
   @override // Code to run in startup
   void initState() {
@@ -324,7 +324,7 @@ class _CollectionsPageState extends State<CollectionsPage>
                                 imageValue![index] != null &&
                                 imageValue![index]!.values.isNotEmpty) {
                               child = BlurHash(
-                                hash: imageValue![index]!.values.first,
+                                hash: imageValue![index]!.values.first.$1,
                               );
                             } else {
                               child = Text("Empty");

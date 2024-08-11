@@ -26,7 +26,7 @@ class PhotoView extends StatefulWidget {
 class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
   late final PageController pageController;
 
-  Map<String, String>? imageValue;
+  List<Map<String, (String, double)>>? imageValue;
 
   @override
   void initState() {
@@ -36,10 +36,12 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
   }
 
   Future<Widget> chainedAsyncOperations(index) async {
-    imageValue ??= await getImagesWrapper(widget.url);
+    await getImagesWrapper(widget.url).then((value) {
+      imageValue ??= sortMapToList(value);
+    });
 
     Uint8List imageData = await getFileWrapper(
-        "${widget.url}/${imageValue?.keys.toList()[index]}");
+        "${widget.url}/${imageValue?[index].keys.toList().first}");
 
     return Image.memory(
       Uint8List.fromList(imageData),
@@ -96,17 +98,17 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
                               ? const SizedBox()
                               : Center(
                                   child: AspectRatio(
-                                    aspectRatio: BlurHash(
-                                                hash: imageValue!.values
-                                                    .toList()[index])
-                                            .decodingHeight /
-                                        BlurHash(
-                                                hash: imageValue!.values
-                                                    .toList()[index])
-                                            .decodingWidth,
+                                    aspectRatio: imageValue![index]
+                                        .values
+                                        .toList()
+                                        .last
+                                        .$2,
                                     child: BlurHash(
-                                        hash:
-                                            imageValue!.values.toList()[index]),
+                                        hash: imageValue![index]
+                                            .values
+                                            .toList()
+                                            .last
+                                            .$1),
                                   ),
                                 ),
                           const Center(

@@ -1,3 +1,4 @@
+
 // file manipulation
 use std::{
     collections::HashMap, 
@@ -102,10 +103,10 @@ pub fn get_dirs(dir: String) -> Result<Vec<String>, VaultError> {
     }
 }
 
-pub fn get_images(dir: String) -> Result<HashMap<String, String>, VaultError> {
+pub fn get_images(dir: String) -> Result<HashMap<String, (String, f32)>, VaultError> {
     match fs::read_dir(&dir) {
         Ok(entries) => {
-            let mut files: HashMap<String, String> = HashMap::new();
+            let mut files: HashMap<String, (String, f32)> = HashMap::new();
             for entry in entries {
                 match entry {
                     Ok(entry) => {
@@ -113,9 +114,18 @@ pub fn get_images(dir: String) -> Result<HashMap<String, String>, VaultError> {
                             let value = entry.file_name().to_string_lossy().to_string();
                             let file_path = Path::new(&dir).join(".hash").join(&value);
         
-                            let contents = fs::read_to_string(file_path)
+                            let buffer = fs::read(&file_path)
                                 .map_err(|e| VaultError::Error(e.to_string()))?;
-                            files.insert(value, contents);
+                            let contents = String::from_utf8(decrypt_data(&buffer)?)
+                                .map_err(|e| VaultError::Error(e.to_string()))?
+                                .split(" ")
+                                .map(|s| s.to_string())
+                                .collect::<Vec<String>>();
+
+                            let aspect_ratio: f32 = contents[1].parse().unwrap();
+                            let hash = contents[0].clone();
+
+                            files.insert(value, (hash, aspect_ratio));
                             
                         };
                     }
@@ -128,7 +138,7 @@ pub fn get_images(dir: String) -> Result<HashMap<String, String>, VaultError> {
     }
 }
 
-pub fn get_album_thumb(dir: &str) -> Result<Option<HashMap<String, String>>, VaultError> {
+pub fn get_album_thumb(dir: &str) -> Result<Option<HashMap<String, (String, f32)>>, VaultError> {
     let images = get_images(dir.to_owned())?;
     let smallest_entry = images.iter()
         .min_by_key(|entry| entry.0.clone());
@@ -292,10 +302,12 @@ fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, compo
                         Some(filename) => {
                             let hash_path = parent_path.join(".hash").join(filename);
                             let path = hash_path.as_os_str();
+
+                            let content = format!("{} {:.2}", hash, width as f32 / height as f32);
                     
                             match File::create(&path) {
                                 Ok(mut file) => {
-                                    file.write_all(&hash.as_bytes())
+                                    file.write_all(&encrypt_data(&content.as_bytes())?)
                                         .map_err(|e| VaultError::Error(e.to_string()))?;
                                 },
                                 Err(e) => {
@@ -304,7 +316,7 @@ fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, compo
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
                                         let mut file  = File::create(&path)
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
-                                        file.write_all(&hash.as_bytes())
+                                        file.write_all(&encrypt_data(&content.as_bytes())?)
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
                                     } else {
                                         return Err(VaultError::Error(e.to_string()));

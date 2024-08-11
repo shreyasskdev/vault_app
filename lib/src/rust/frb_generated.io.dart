@@ -21,13 +21,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
-  Map<String, String> dco_decode_Map_String_String(dynamic raw);
+  Map<String, (String, double)> dco_decode_Map_String_record_string_f_32(
+      dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
 
   @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  double dco_decode_f_32(dynamic raw);
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
@@ -39,13 +43,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
-  List<(String, String)> dco_decode_list_record_string_string(dynamic raw);
+  List<(String, (String, double))>
+      dco_decode_list_record_string_record_string_f_32(dynamic raw);
 
   @protected
-  Map<String, String>? dco_decode_opt_Map_String_String(dynamic raw);
+  Map<String, (String, double)>? dco_decode_opt_Map_String_record_string_f_32(
+      dynamic raw);
 
   @protected
-  (String, String) dco_decode_record_string_string(dynamic raw);
+  (String, double) dco_decode_record_string_f_32(dynamic raw);
+
+  @protected
+  (String, (String, double)) dco_decode_record_string_record_string_f_32(
+      dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -57,7 +67,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   VaultError dco_decode_vault_error(dynamic raw);
 
   @protected
-  Map<String, String> sse_decode_Map_String_String(
+  Map<String, (String, double)> sse_decode_Map_String_record_string_f_32(
       SseDeserializer deserializer);
 
   @protected
@@ -65,6 +75,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  double sse_decode_f_32(SseDeserializer deserializer);
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
@@ -76,15 +89,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
-  List<(String, String)> sse_decode_list_record_string_string(
+  List<(String, (String, double))>
+      sse_decode_list_record_string_record_string_f_32(
+          SseDeserializer deserializer);
+
+  @protected
+  Map<String, (String, double)>? sse_decode_opt_Map_String_record_string_f_32(
       SseDeserializer deserializer);
 
   @protected
-  Map<String, String>? sse_decode_opt_Map_String_String(
-      SseDeserializer deserializer);
+  (String, double) sse_decode_record_string_f_32(SseDeserializer deserializer);
 
   @protected
-  (String, String) sse_decode_record_string_string(
+  (String, (String, double)) sse_decode_record_string_record_string_f_32(
       SseDeserializer deserializer);
 
   @protected
@@ -100,14 +117,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
-  void sse_encode_Map_String_String(
-      Map<String, String> self, SseSerializer serializer);
+  void sse_encode_Map_String_record_string_f_32(
+      Map<String, (String, double)> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_f_32(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
@@ -120,16 +140,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       Uint8List self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_record_string_string(
-      List<(String, String)> self, SseSerializer serializer);
+  void sse_encode_list_record_string_record_string_f_32(
+      List<(String, (String, double))> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_opt_Map_String_String(
-      Map<String, String>? self, SseSerializer serializer);
+  void sse_encode_opt_Map_String_record_string_f_32(
+      Map<String, (String, double)>? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_record_string_string(
-      (String, String) self, SseSerializer serializer);
+  void sse_encode_record_string_f_32(
+      (String, double) self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_record_string_record_string_f_32(
+      (String, (String, double)) self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
