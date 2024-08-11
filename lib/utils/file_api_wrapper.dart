@@ -36,6 +36,7 @@ mixin FileApiWrapper {
 
   Future<Map<String, String>?> getAlbumThumbWrapper(dir) async {
     try {
+      print(dir);
       return await api.getAlbumThumb(dir: dir);
     } catch (e) {
       debugPrint("Vault error: WARN: $e");
@@ -55,7 +56,7 @@ mixin FileApiWrapper {
     return await api
         .saveFile(
           imageData: data,
-          filePath: path,
+          dir: path,
         )
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
@@ -72,6 +73,7 @@ mixin FileApiWrapper {
 }
 Future<Uint8List> _isolateGetFile(String path) async {
   await RustLib.init();
+  print(" YOOOO >>>>> " + path);
 
   Uint8List value =
       await api.getFile(path: path).then((value) => value).catchError((e) {

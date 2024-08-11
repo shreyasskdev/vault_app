@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 import 'package:vault/widget/touchable.dart';
 import 'dart:io';
@@ -25,6 +26,8 @@ class PhotoView extends StatefulWidget {
 class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
   late final PageController pageController;
 
+  Map<String, String>? imageValue;
+
   @override
   void initState() {
     super.initState();
@@ -32,16 +35,11 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
     pageController = PageController(initialPage: widget.index);
   }
 
-  // void getImages() async {
-  //   await getImagesWrapper(widget.url).then((value) => setState(() {
-  //         files = value;
-  //       }));
-  // }
-
   Future<Widget> chainedAsyncOperations(index) async {
-    final images = await getImagesWrapper(widget.url);
-    Uint8List imageData =
-        await getFileWrapper("${widget.url}/${images[index]}");
+    imageValue ??= await getImagesWrapper(widget.url);
+
+    Uint8List imageData = await getFileWrapper(
+        "${widget.url}/${imageValue?.keys.toList()[index]}");
 
     return Image.memory(
       Uint8List.fromList(imageData),
@@ -91,32 +89,36 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
                   if (snapshot.hasData) {
                     return snapshot.data!;
                   } else {
-                    return const Center(
-                      child: CircularProgressIndicator(),
+                    return Center(
+                      child: Stack(
+                        children: [
+                          imageValue == null
+                              ? const SizedBox()
+                              : Center(
+                                  child: AspectRatio(
+                                    aspectRatio: BlurHash(
+                                                hash: imageValue!.values
+                                                    .toList()[index])
+                                            .decodingHeight /
+                                        BlurHash(
+                                                hash: imageValue!.values
+                                                    .toList()[index])
+                                            .decodingWidth,
+                                    child: BlurHash(
+                                        hash:
+                                            imageValue!.values.toList()[index]),
+                                  ),
+                                ),
+                          const Center(
+                              child: CircularProgressIndicator(
+                            color: Color.fromARGB(50, 255, 255, 255),
+                          )),
+                        ],
+                      ),
                     );
                   }
                 },
               ),
-              // child: FutureBuilder<Uint8List>(
-              //   future: getFileWrapper("${widget.url}/${files[index]}"),
-              //   builder: (context, snapshot) {
-              //     if (snapshot.hasData) {
-              //       return Image.memory(
-              //         Uint8List.fromList(snapshot.data!),
-              //         fit: BoxFit.contain,
-              //         width: double.infinity,
-              //         errorBuilder: (context, error, stackTrace) {
-              //           debugPrint("Vault error: INFO: $error");
-              //           return const Center(
-              //             child: Text("error"),
-              //           );
-              //         },
-              //       );
-              //     } else {
-              //       return const Center(child: CircularProgressIndicator());
-              //     }
-              //   },
-              // ),
               initialScale: PhotoViewComputedScale.contained,
               minScale: PhotoViewComputedScale.contained,
               heroAttributes: PhotoViewHeroAttributes(tag: index),

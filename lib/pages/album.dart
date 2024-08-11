@@ -48,8 +48,8 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     final bytes = await File(image.path).readAsBytes();
     final Uint8List uint8list = Uint8List.fromList(bytes);
 
-    saveFileWrapper(uint8list,
-        '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}');
+    saveFileWrapper(uint8list, '$directory/${widget.name}');
+    // '$directory/${widget.name}/${filename("${widget.name}.image", "$directory/${widget.name}", "_d", false)}');
     getImages();
   }
 

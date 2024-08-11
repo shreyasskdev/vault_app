@@ -25,10 +25,8 @@ class _CollectionsPageState extends State<CollectionsPage>
   final _controller = TextEditingController();
 
   List<String>? directories;
-  // Map<String, String>? files;
   String? appDirectoryPath;
-  // String? imagePath, blurhash;
-  Map<String, String>? imageValue;
+  List<Map<String, String>?>? imageValue;
 
   @override // Code to run in startup
   void initState() {
@@ -38,8 +36,7 @@ class _CollectionsPageState extends State<CollectionsPage>
 
   Future<void> init() async {
     await initAppDir();
-    await getDirs();
-    // await getImagePath(appDirectoryPath);
+    await getDirsAndAlbum();
   }
 
   Future<void> initAppDir() async {
@@ -51,51 +48,37 @@ class _CollectionsPageState extends State<CollectionsPage>
     });
   }
 
-  Future<void> getDirs() async {
+  Future<void> getDirsAndAlbum() async {
     if (appDirectoryPath == null) await initAppDir();
 
-    await getDirsWrapper(appDirectoryPath).then((directories) {
-      setState(() {
-        this.directories = directories;
-      });
+    List<String> directories = await getDirsWrapper(appDirectoryPath);
+    setState(() {
+      // this.directories = directories;
+      imageValue = [];
     });
-  }
-
-  // Future<void> getImages(index) async {
-  //   if (appDirectoryPath == null) await initAppDir();
-  //   if (directories == null) await getDirs();
-  //   if (directories != null && directories!.isNotEmpty) {
-  //     await getImagesWrapper(
-  //       '$appDirectoryPath/${directories?[index].split("/").last}',
-  //     ).then((value) {
-  //       setState(() {
-  //         files = value;
-  //       });
-  //     });
-  //   }
-  // }
-
-  Future<void> getImagePath(dir) async {
-    if (dir == null) return;
-    if (imageValue != null) return;
-    await getAlbumThumbWrapper(dir).then((value) {
-      setState(() {
-        if (value == null) {
-          imageValue = {};
-          return;
-        }
-        imageValue = value;
+    for (String directory in directories) {
+      await getAlbumThumbWrapper("${appDirectoryPath!}/$directory")
+          .then((value) {
+        setState(() {
+          imageValue!.add(value);
+        });
       });
+    }
+    setState(() {
+      this.directories = directories;
+      // imageValue = [];
     });
   }
 
   Future<Widget> chainedAsyncOperations(index) async {
     if (appDirectoryPath == null) await initAppDir();
     if (imageValue == null) {
-      await getImagePath("$appDirectoryPath/${directories?[index]}");
+      await getDirsAndAlbum();
     }
 
-    if (imageValue!.isEmpty) {
+    print("$imageValue :: $directories");
+
+    if (imageValue![index] == null) {
       return Container(
         color: const Color.fromARGB(255, 14, 14, 14),
         child: const Center(
@@ -103,9 +86,9 @@ class _CollectionsPageState extends State<CollectionsPage>
         ),
       );
     }
-
+    print("THIS >> ${directories?[index]}/${imageValue![index]!.keys.first}");
     Uint8List imageData = await getFileThumbWrapper(
-        "$appDirectoryPath/${directories?[index]}/${imageValue!.keys.first}");
+        "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}");
 
     return Image.memory(
       Uint8List.fromList(imageData),
@@ -133,8 +116,8 @@ class _CollectionsPageState extends State<CollectionsPage>
     if (mounted) {
       context.pop();
     }
-    getDirs();
     _controller.text = "";
+    getDirsAndAlbum();
   }
 
   void createNewAlbum(context) {
@@ -304,7 +287,8 @@ class _CollectionsPageState extends State<CollectionsPage>
               onTap: () {
                 context
                     .push("/album/${directories?[index].split("/").last}")
-                    .then((_) => setState(() => {}));
+                    // .then((_) => getDirs());
+                    .then((_) => {init(), setState(() => {})});
               },
               child: Container(
                 clipBehavior: Clip.antiAlias,
@@ -336,9 +320,11 @@ class _CollectionsPageState extends State<CollectionsPage>
                           if (snapshot.hasData) {
                             child = SizedBox.expand(child: snapshot.data!);
                           } else {
-                            if (imageValue != null) {
+                            if (imageValue != null &&
+                                imageValue![index] != null &&
+                                imageValue![index]!.values.isNotEmpty) {
                               child = BlurHash(
-                                hash: imageValue!.values.first,
+                                hash: imageValue![index]!.values.first,
                               );
                             } else {
                               child = Text("Empty");

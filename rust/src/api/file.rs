@@ -1,6 +1,18 @@
 // file manipulation
 use std::{
-    collections::HashMap, fs::{self, File}, io::{self, BufReader, Cursor, Read, Write}, os::unix::ffi::OsStrExt, path::Path,
+    collections::HashMap, 
+    fs::{
+        self, 
+        File
+    }, 
+    io::{
+        self, 
+        BufReader, 
+        Cursor, 
+        Read, 
+        Write
+    }, 
+    path::Path,
 };
 
 // encryption
@@ -8,6 +20,7 @@ use aes::Aes256;
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
 
+use chrono::Local;
 // key generation
 use pbkdf2::pbkdf2_hmac;
 use sha2::Sha256;
@@ -17,15 +30,14 @@ use lazy_static::lazy_static;
 use std::sync::RwLock;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+// Custom error
 use crate::api::error::VaultError;
 
-
+// Caching
 use blurhash::encode;
 use image::{imageops, EncodableLayout, GenericImageView};
 
-// use crate::api::database::*;
-
-// Define an alias for the AES-256-CBC encryption mode
+// alias for the AES-256-CBC encryption mode
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
 
 const SALT_LEN: usize = 32;
@@ -46,7 +58,6 @@ struct CryptoParams {
     iv: [u8; IV_LEN],
 }
 impl ZeroizeOnDrop for CryptoParams {}
-
 lazy_static! {
     static ref CRYPTO_PARAMS: RwLock<Option<CryptoParams>> = RwLock::new(None);
 }
@@ -56,8 +67,10 @@ pub fn create_dir(dir: String, album_name: String) -> Result<(), VaultError> {
         Ok(_) => Ok(()),
         Err(e) => {
             if e.kind() == io::ErrorKind::NotFound {
-                fs::create_dir_all(dir.clone()).unwrap();
-                fs::create_dir(dir + "/" + &album_name).unwrap();
+                fs::create_dir_all(dir.clone())
+                    .map_err(|e| VaultError::Error(e.to_string()))?;
+                fs::create_dir(dir + "/" + &album_name)
+                    .map_err(|e| VaultError::Error(e.to_string()))?;
                 Ok(())
             } else {
                 Err(VaultError::Error(e.to_string()))
@@ -71,10 +84,14 @@ pub fn get_dirs(dir: String) -> Result<Vec<String>, VaultError> {
         Ok(entries) => {
             let mut directories: Vec<String> = vec![];
             for entry in entries {
-                let entry = entry.unwrap();
-                if entry.path().is_dir() {
-                    directories.push(entry.file_name().to_string_lossy().to_string());
-                };
+                match entry {
+                    Ok(entry) => {
+                        if entry.path().is_dir() {
+                            directories.push(entry.file_name().to_string_lossy().to_string());
+                        };
+                    },
+                    Err(e) => return Err(VaultError::Error(e.to_string())),
+                }
             }
             Ok(directories)
         }
@@ -89,20 +106,21 @@ pub fn get_images(dir: String) -> Result<HashMap<String, String>, VaultError> {
     match fs::read_dir(&dir) {
         Ok(entries) => {
             let mut files: HashMap<String, String> = HashMap::new();
-            // let db = sled::open(Path::new(&dir).join("hash").as_os_str()).unwrap();
-            // let db = get_or_create_db()?;
-            // set_db_path(Path::new(&dir).join("hash").to_string_lossy().to_string())?;
-
             for entry in entries {
-                let entry = entry.unwrap();
-                if entry.path().is_file() {
-                    let value = entry.file_name().to_string_lossy().to_string();
-                    let file_path = Path::new(&dir).join("hash").join(&value);
-
-                    let contents = fs::read_to_string(file_path).unwrap();
-                    files.insert(value, contents);
-                    
-                };
+                match entry {
+                    Ok(entry) => {
+                        if entry.path().is_file() {
+                            let value = entry.file_name().to_string_lossy().to_string();
+                            let file_path = Path::new(&dir).join(".hash").join(&value);
+        
+                            let contents = fs::read_to_string(file_path)
+                                .map_err(|e| VaultError::Error(e.to_string()))?;
+                            files.insert(value, contents);
+                            
+                        };
+                    }
+                    Err(e) => return Err(VaultError::Error(e.to_string())),
+                }
             }
             Ok(files)
         }
@@ -126,24 +144,27 @@ pub fn get_album_thumb(dir: &str) -> Result<Option<HashMap<String, String>>, Vau
 }
 
 pub fn get_file_thumb(path: &str) -> Result<Vec<u8>, VaultError> {
-    get_album_thumb(Path::new(path).parent().unwrap().to_str().unwrap())?;
-
     let mut files_list = path.to_string().split("/").map(|s| s.to_string()).collect::<Vec<String>>();
-    let filename = files_list.pop().unwrap();
-    let path = files_list.join("/") + "/thumbs/" + &filename;
+    // let filename = files_list.pop().unwrap();
+    match files_list.pop() {
+        Some(filename) => {
+            let path = files_list.join("/") + "/.thumbs/" + &filename;
 
-    match File::open(path) {
-        Ok(file) => {
-            let mut reader = BufReader::new(file);
-            let mut buffer = Vec::new();
-            match reader.read_to_end(&mut buffer) {
-                Ok(_) => {
-                    Ok(decrypt_data(&buffer)?)
-                },
+            match File::open(path) {
+                Ok(file) => {
+                    let mut reader = BufReader::new(file);
+                    let mut buffer = Vec::new();
+                    match reader.read_to_end(&mut buffer) {
+                        Ok(_) => {
+                            Ok(decrypt_data(&buffer)?)
+                        },
+                        Err(e) => Err(VaultError::Error(e.to_string())),
+                    }
+                }
                 Err(e) => Err(VaultError::Error(e.to_string())),
             }
-        }
-        Err(e) => Err(VaultError::Error(e.to_string())),
+        },
+        None => Err(VaultError::Error("Invalid path".to_string())),
     }
 }
 
@@ -164,11 +185,14 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
     }
 }
 
-pub fn save_file(image_data: Vec<u8>, file_path: String) -> Result<(), VaultError> {
-    cache_image(&image_data, file_path.clone(), 2, 2)?;
+pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
+
+    let path = Path::new(&dir).join(generate_unique_filename(&dir));
+
+    cache_image(&image_data, path.as_os_str().to_string_lossy().to_string(), 2, 2)?;
     let encrypted_data = encrypt_data(&image_data)?;
 
-    let path = Path::new(&file_path);
+
     match File::create(&path) {
         Ok(mut file) => match file.write_all(&encrypted_data) {
             Ok(_) => Ok(()),
@@ -250,9 +274,9 @@ fn get_crypto_params() -> Result<Option<([u8; KEY_LEN], [u8; IV_LEN])>, VaultErr
 }
 
 // Image caching functions ----------------------------------------
-
 fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, components_y: u32) -> Result<(), VaultError> {
-    let img = image::load_from_memory(image_data).unwrap();
+    let img = image::load_from_memory(image_data)
+        .map_err(|e| VaultError::Error(e.to_string()))?;
     let (width, height) = img.dimensions();
 
 
@@ -260,12 +284,41 @@ fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, compo
     match encode(components_x, components_y, width, height, img.to_rgba8().as_bytes()) {
         Ok(hash) => {
             let path_temp = Path::new(file_path.as_str());
-            let parent_path = path_temp.parent().unwrap();
-            let hash_path = parent_path.join("hash").join(path_temp.file_name().unwrap());
-            let path = hash_path.as_os_str();
+            // let parent_path = path_temp.parent().unwrap();
+            match path_temp.parent() {
+                Some(parent_path) => {
+                    // let hash_path = parent_path.join("hash").join(path_temp.file_name().unwrap());
+                    match path_temp.file_name() {
+                        Some(filename) => {
+                            let hash_path = parent_path.join(".hash").join(filename);
+                            let path = hash_path.as_os_str();
+                    
+                            match File::create(&path) {
+                                Ok(mut file) => {
+                                    file.write_all(&hash.as_bytes())
+                                        .map_err(|e| VaultError::Error(e.to_string()))?;
+                                },
+                                Err(e) => {
+                                    if e.kind() == io::ErrorKind::NotFound {
+                                        fs::create_dir_all(parent_path.join(".hash"))
+                                            .map_err(|e| VaultError::Error(e.to_string()))?;
+                                        let mut file  = File::create(&path)
+                                            .map_err(|e| VaultError::Error(e.to_string()))?;
+                                        file.write_all(&hash.as_bytes())
+                                            .map_err(|e| VaultError::Error(e.to_string()))?;
+                                    } else {
+                                        return Err(VaultError::Error(e.to_string()));
+                                    }
+                                },
+                            }
+                        },
+                        None => return Err(VaultError::Error("Invalid path".to_string())),
+                    }
+                    
+                },
+                None => return Err(VaultError::Error("Invalid path".to_string())),
+            }
             
-            let mut file =  File::create(&path).unwrap();
-            file.write_all(&hash.as_bytes()).unwrap();
 
         },
         Err(e) => return Err(VaultError::Error(e.to_string())),
@@ -281,25 +334,44 @@ fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, compo
         thumbnail.height(),
         image::ColorType::Rgb8,
         image::ImageFormat::Jpeg,
-    ).unwrap();
+    ).map_err(|e| VaultError::Error(e.to_string()))?;
 
     // getting filepath
-    let working_dir = Path::new(&file_path)
-        .parent()
-        .unwrap();
-    let filename = working_dir
-        .join(format!("thumbs/{}", Path::new(&file_path).file_name().unwrap().to_str().unwrap()));
+    // let working_dir = Path::new(&file_path)
+    //     .parent()
+    //     .unwrap();
+    let working_dir;
+    match Path::new(&file_path).parent() {
+        Some(parent) => working_dir = parent,
+        None => return Err(VaultError::Error("Invalid path".to_string())),
+    }
+    // let filename = working_dir
+    //     .join(format!("thumbs/{}", Path::new(&file_path).file_name().unwrap().to_str().unwrap()));
+    let filename;
+    match Path::new(&file_path).file_name() {
+        Some(filepath) => match filepath.to_str() {
+            Some(filepath_str) => {
+                filename = working_dir.join(format!(".thumbs/{}", filepath_str));
+            },
+            None => return Err(VaultError::Error("Invalid path".to_string())),
+        },
+        None => return Err(VaultError::Error("Invalid path".to_string())),
+    }
 
     // saving file
     let encrypted_data = encrypt_data(&buffer)?;
     match File::create(&filename) {
         Ok(mut file) => match file.write_all(&encrypted_data) {
-            Ok(_) => Ok(()),
+            Ok(_) => {
+                Ok(())
+            },
             Err(e) => Err(VaultError::Error(e.to_string())),
         },
         Err(e) => {
             if e.kind() == io::ErrorKind::NotFound {
-                create_dir(working_dir.to_string_lossy().to_string(), "thumbs".to_string())?;
+                // create_dir(working_dir.to_string_lossy().to_string(), "thumbs".to_string())?;
+                fs::create_dir_all(working_dir.join(".thumbs"))
+                    .map_err(|e| VaultError::Error(e.to_string()))?;
                 match File::create(&filename) {
                     Ok(mut file) => match file.write_all(&encrypted_data) {
                         Ok(_) => Ok(()),
@@ -311,5 +383,26 @@ fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, compo
                 Err(VaultError::Error(e.to_string()))
             }
         },
+    }
+}
+
+// filename
+fn generate_unique_filename(base_dir: &str) -> String {
+    let now = Local::now();
+    let date_time = now.format("%Y%m%d%H%M%S").to_string();
+    
+    let mut counter = 1;
+    loop {
+        let filename = format!("{}_{:04}.image", date_time, counter);
+        let full_path = Path::new(base_dir).join(&filename);
+        
+        if !full_path.exists() {
+            return filename;
+        }
+        
+        counter += 1;
+        if counter > 9999 {
+            panic!("Too many files with the same timestamp");
+        }
     }
 }

@@ -267,11 +267,11 @@ fn wire__crate__api__file__save_file_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_image_data = <Vec<u8>>::sse_decode(&mut deserializer);
-            let api_file_path = <String>::sse_decode(&mut deserializer);
+            let api_dir = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, crate::api::error::VaultError>((move || {
-                    let output_ok = crate::api::file::save_file(api_image_data, api_file_path)?;
+                    let output_ok = crate::api::file::save_file(api_image_data, api_dir)?;
                     Ok(output_ok)
                 })())
             }

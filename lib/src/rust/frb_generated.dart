@@ -85,7 +85,7 @@ abstract class RustLibApi extends BaseApi {
   Future<Map<String, String>> crateApiFileGetImages({required String dir});
 
   Future<void> crateApiFileSaveFile(
-      {required List<int> imageData, required String filePath});
+      {required List<int> imageData, required String dir});
 
   Future<bool> crateApiFileSetCryptoParams({required String password});
 
@@ -251,12 +251,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateApiFileSaveFile(
-      {required List<int> imageData, required String filePath}) {
+      {required List<int> imageData, required String dir}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_list_prim_u_8_loose(imageData, serializer);
-        sse_encode_String(filePath, serializer);
+        sse_encode_String(dir, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 7, port: port_);
       },
@@ -265,14 +265,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeErrorData: sse_decode_vault_error,
       ),
       constMeta: kCrateApiFileSaveFileConstMeta,
-      argValues: [imageData, filePath],
+      argValues: [imageData, dir],
       apiImpl: this,
     ));
   }
 
   TaskConstMeta get kCrateApiFileSaveFileConstMeta => const TaskConstMeta(
         debugName: "save_file",
-        argNames: ["imageData", "filePath"],
+        argNames: ["imageData", "dir"],
       );
 
   @override
