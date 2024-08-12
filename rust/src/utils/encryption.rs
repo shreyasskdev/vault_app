@@ -13,7 +13,7 @@ use std::sync::RwLock;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // Custom error
-use crate::api::error::VaultError;
+use crate::utils::error::VaultError;
 
 // alias for the AES-256-CBC encryption mode
 type Aes256Cbc = Cbc<Aes256, Pkcs7>;
@@ -85,7 +85,6 @@ fn derive_key_and_iv(password: &str, salt: &[u8]) -> ([u8; KEY_LEN], [u8; IV_LEN
     (key, iv)
 }
 
-// #[flutter_rust_bridge::frb(sync)]
 pub fn set_crypto_params(password: &str) -> Result<bool, VaultError> {
     match CRYPTO_PARAMS.write() {
         Ok(mut params) => {

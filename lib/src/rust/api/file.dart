@@ -4,10 +4,11 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'error.dart';
+import '../utils/error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cache_image`, `generate_unique_filename`
+Future<bool> setPassword({required String password}) =>
+    RustLib.instance.api.crateApiFileSetPassword(password: password);
 
 Future<void> createDir({required String dir, required String albumName}) =>
     RustLib.instance.api.crateApiFileCreateDir(dir: dir, albumName: albumName);

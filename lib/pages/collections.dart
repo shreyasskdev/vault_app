@@ -288,7 +288,9 @@ class _CollectionsPageState extends State<CollectionsPage>
                 context
                     .push("/album/${directories?[index].split("/").last}")
                     // .then((_) => getDirs());
-                    .then((_) => {init(), setState(() => {})});
+                    .then((_) async {
+                  await getDirsAndAlbum();
+                });
               },
               child: Container(
                 clipBehavior: Clip.antiAlias,

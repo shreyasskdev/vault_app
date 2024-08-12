@@ -14,7 +14,7 @@ class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
 
   void setPassword() async {
-    await setCrytoParamsWrapper(_controller.text);
+    await setPasswordWrapper(_controller.text);
     if (mounted) {
       context.pushReplacement("/collections");
     }

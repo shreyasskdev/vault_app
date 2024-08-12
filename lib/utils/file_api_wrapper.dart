@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/src/rust/api/file.dart' as file_api;
-import 'package:vault/src/rust/api/encryption.dart' as encryption_api;
+// import 'package:vault/src/rust/api/encryption.dart' as encryption_api;
 import 'package:vault/src/rust/frb_generated.dart';
 
 mixin FileApiWrapper {
@@ -62,9 +62,9 @@ mixin FileApiWrapper {
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 
-  Future<bool> setCrytoParamsWrapper(password) async {
-    return await encryption_api
-        .setCryptoParams(password: password)
+  Future<bool> setPasswordWrapper(password) async {
+    return await file_api
+        .setPassword(password: password)
         .then((value) => value)
         .catchError((e) {
       debugPrint("Vault error: WARN: $e");
