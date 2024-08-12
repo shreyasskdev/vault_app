@@ -50,7 +50,9 @@ mixin _$VaultError {
   }) =>
       throw _privateConstructorUsedError;
 
-  @JsonKey(ignore: true)
+  /// Create a copy of VaultError
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $VaultErrorCopyWith<VaultError> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -74,6 +76,8 @@ class _$VaultErrorCopyWithImpl<$Res, $Val extends VaultError>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of VaultError
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -107,6 +111,8 @@ class __$$VaultError_ErrorImplCopyWithImpl<$Res>
       $Res Function(_$VaultError_ErrorImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of VaultError
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -145,7 +151,9 @@ class _$VaultError_ErrorImpl extends VaultError_Error {
   @override
   int get hashCode => Object.hash(runtimeType, field0);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of VaultError
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$VaultError_ErrorImplCopyWith<_$VaultError_ErrorImpl> get copyWith =>
@@ -215,8 +223,11 @@ abstract class VaultError_Error extends VaultError {
 
   @override
   String get field0;
+
+  /// Create a copy of VaultError
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$VaultError_ErrorImplCopyWith<_$VaultError_ErrorImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

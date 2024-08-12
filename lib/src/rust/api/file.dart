@@ -7,9 +7,7 @@ import '../frb_generated.dart';
 import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `cache_image`, `decrypt_data`, `derive_key_and_iv`, `encrypt_data`, `generate_unique_filename`, `get_crypto_params`
-// These types are ignored because they are not used by any `pub` functions: `CRYPTO_PARAMS`, `CryptoParams`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `initialize`, `zeroize`
+// These functions are ignored because they are not marked as `pub`: `cache_image`, `generate_unique_filename`
 
 Future<void> createDir({required String dir, required String albumName}) =>
     RustLib.instance.api.crateApiFileCreateDir(dir: dir, albumName: albumName);
@@ -31,6 +29,3 @@ Future<Uint8List> getFile({required String path}) =>
 
 Future<void> saveFile({required List<int> imageData, required String dir}) =>
     RustLib.instance.api.crateApiFileSaveFile(imageData: imageData, dir: dir);
-
-Future<bool> setCryptoParams({required String password}) =>
-    RustLib.instance.api.crateApiFileSetCryptoParams(password: password);

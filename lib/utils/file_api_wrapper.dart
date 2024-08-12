@@ -4,13 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:vault/pages/password.dart';
-import 'package:vault/src/rust/api/file.dart' as api;
+import 'package:vault/src/rust/api/file.dart' as file_api;
+import 'package:vault/src/rust/api/encryption.dart' as encryption_api;
 import 'package:vault/src/rust/frb_generated.dart';
 
 mixin FileApiWrapper {
   Future<void> createDirWrapper(path, albumname) async {
     try {
-      await api.createDir(dir: path, albumName: albumname);
+      await file_api.createDir(dir: path, albumName: albumname);
     } catch (e) {
       debugPrint('Vault error: WARN: $e');
     }
@@ -18,7 +19,7 @@ mixin FileApiWrapper {
 
   Future<List<String>> getDirsWrapper(path) async {
     try {
-      return api.getDirs(dir: path);
+      return file_api.getDirs(dir: path);
     } catch (e) {
       debugPrint('Vault error: WARN: $e');
       return Future(List.empty);
@@ -27,7 +28,7 @@ mixin FileApiWrapper {
 
   Future<Map<String, (String, double)>> getImagesWrapper(path) async {
     try {
-      return await api.getImages(dir: path);
+      return await file_api.getImages(dir: path);
     } catch (e) {
       debugPrint("Vault error: WARN: $e");
       return {};
@@ -37,7 +38,7 @@ mixin FileApiWrapper {
   Future<Map<String, (String, double)>?> getAlbumThumbWrapper(dir) async {
     try {
       print(dir);
-      return await api.getAlbumThumb(dir: dir);
+      return await file_api.getAlbumThumb(dir: dir);
     } catch (e) {
       debugPrint("Vault error: WARN: $e");
       return {};
@@ -53,7 +54,7 @@ mixin FileApiWrapper {
   }
 
   Future<void> saveFileWrapper(data, path) async {
-    return await api
+    return await file_api
         .saveFile(
           imageData: data,
           dir: path,
@@ -62,7 +63,7 @@ mixin FileApiWrapper {
   }
 
   Future<bool> setCrytoParamsWrapper(password) async {
-    return await api
+    return await encryption_api
         .setCryptoParams(password: password)
         .then((value) => value)
         .catchError((e) {
@@ -86,7 +87,7 @@ Future<Uint8List> _isolateGetFile(String path) async {
   print(" YOOOO >>>>> " + path);
 
   Uint8List value =
-      await api.getFile(path: path).then((value) => value).catchError((e) {
+      await file_api.getFile(path: path).then((value) => value).catchError((e) {
     debugPrint(
         "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
     return Uint8List.fromList([]);
@@ -97,8 +98,10 @@ Future<Uint8List> _isolateGetFile(String path) async {
 Future<Uint8List> _isolateGetFileThumb(String path) async {
   await RustLib.init();
 
-  Uint8List value =
-      await api.getFileThumb(path: path).then((value) => value).catchError((e) {
+  Uint8List value = await file_api
+      .getFileThumb(path: path)
+      .then((value) => value)
+      .catchError((e) {
     debugPrint(
         "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
     return Uint8List.fromList([]);
