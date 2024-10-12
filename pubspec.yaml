@@ -45,8 +45,9 @@ dependencies:
   name_plus: ^0.0.1
   photo_view: ^0.15.0
 
+  flutter_displaymode: ^0.6.0
   figma_squircle: ^0.5.3
-  rust_lib_Vault:
+  rust_lib_vault:
     path: rust_builder
   flutter_rust_bridge: 2.1.0
 

@@ -1270,7 +1270,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_lib_Vault"
+name = "rust_lib_vault"
 version = "0.1.0"
 dependencies = [
  "aes",
