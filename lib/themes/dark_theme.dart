@@ -113,13 +113,25 @@ ThemeData darkTheme = ThemeData(
       color: colorScheme.surfaceBright,
       fontWeight: FontWeight.w600,
     ),
-    enabledBorder: UnderlineInputBorder(
+    // enabledBorder: UnderlineInputBorder(
+    //   borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+    // ),
+    // focusedBorder: UnderlineInputBorder(
+    //   borderSide: BorderSide(color: backgroundShade.shade50, width: 2),
+    // ),
+    enabledBorder: OutlineInputBorder(
       borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
     ),
-    focusedBorder: UnderlineInputBorder(
-      borderSide: BorderSide(color: backgroundShade.shade50, width: 2),
+    focusedBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+      borderRadius: const BorderRadius.all(Radius.circular(20)),
     ),
   ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+    foregroundColor: colorScheme.onPrimary,
+  )),
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
   ),
