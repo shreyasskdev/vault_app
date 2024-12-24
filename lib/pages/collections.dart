@@ -1,15 +1,15 @@
 import 'dart:ui';
-import 'dart:ui' as ui;
+// import 'dart:ui' as ui;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
-import 'package:flutter_shimmer/flutter_shimmer.dart';
+// import 'package:flutter_shimmer/flutter_shimmer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/widget/touchable.dart';
-import 'dart:io';
+// import 'dart:io';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 

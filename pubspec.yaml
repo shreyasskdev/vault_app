@@ -41,6 +41,7 @@ dependencies:
   google_fonts: any
 
   image_picker: ^1.1.2
+  # image_picker_platform_interface: ^2.10.0
   path_provider: ^2.0.11
   name_plus: ^0.0.1
   photo_view: ^0.15.0
