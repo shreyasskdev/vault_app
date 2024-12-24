@@ -8,6 +8,7 @@ import 'package:flutter_blurhash/flutter_blurhash.dart';
 // import 'package:flutter_shimmer/flutter_shimmer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:vault/moiton_detector.dart';
 import 'package:vault/widget/touchable.dart';
 // import 'dart:io';
 
@@ -222,7 +223,47 @@ class _CollectionsPageState extends State<CollectionsPage>
   @override
   Widget build(BuildContext context) {
     if (directories == null) {
-      return Scaffold(
+      return MotionDetector(
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text("Vault",
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            centerTitle: true,
+            actions: <Widget>[
+              TouchableOpacity(
+                onPressed: () {
+                  createNewAlbum(context);
+                  HapticFeedback.heavyImpact();
+                },
+                child: const Padding(
+                  padding:
+                      EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+                  child: Icon(
+                    Icons.add_circle_outline_rounded,
+                    size: 25,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          body: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CupertinoActivityIndicator(),
+                SizedBox(height: 8),
+                Text(
+                  "Loading...",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return MotionDetector(
+      child: Scaffold(
         appBar: AppBar(
           title: const Text("Vault",
               style: TextStyle(fontWeight: FontWeight.w600)),
@@ -244,137 +285,101 @@ class _CollectionsPageState extends State<CollectionsPage>
             ),
           ],
         ),
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CupertinoActivityIndicator(),
-              SizedBox(height: 8),
-              Text(
-                "Loading...",
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Scaffold(
-      appBar: AppBar(
-        title:
-            const Text("Vault", style: TextStyle(fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        actions: <Widget>[
-          TouchableOpacity(
-            onPressed: () {
-              createNewAlbum(context);
-              HapticFeedback.heavyImpact();
-            },
-            child: const Padding(
-              padding:
-                  EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-              child: Icon(
-                Icons.add_circle_outline_rounded,
-                size: 25,
-              ),
+        body: SafeArea(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(14),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: GridView.builder(
-          padding: const EdgeInsets.all(14),
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 160,
-            childAspectRatio: 1,
-            mainAxisSpacing: 5,
-            crossAxisSpacing: 5,
-          ),
-          itemCount: directories?.length,
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              onTap: () {
-                context
-                    .push("/album/${directories?[index].split("/").last}")
-                    // .then((_) => getDirs());
-                    .then((_) async {
-                  await getDirsAndAlbum();
-                });
-              },
-              child: Container(
-                // clipBehavior: Clip.antiAlias,
-                child:
-                    // ClipSmoothRect(
-                    //   radius: const SmoothBorderRadius.all(
-                    //     SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
-                    //   ),
-                    Stack(
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1 / 1,
-                      child: FutureBuilder<Widget>(
-                        future: chainedAsyncOperations(index),
-                        builder: (context, snapshot) {
-                          Widget child;
-                          if (snapshot.hasData) {
-                            child = SizedBox.expand(child: snapshot.data!);
-                          } else {
-                            if (imageValue != null &&
-                                imageValue![index] != null &&
-                                imageValue![index]!.values.isNotEmpty) {
-                              child = BlurHash(
-                                hash: imageValue![index]!.values.first.$1,
-                              );
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 160,
+              childAspectRatio: 1,
+              mainAxisSpacing: 5,
+              crossAxisSpacing: 5,
+            ),
+            itemCount: directories?.length,
+            itemBuilder: (BuildContext context, int index) {
+              return GestureDetector(
+                onTap: () {
+                  context
+                      .push("/album/${directories?[index].split("/").last}")
+                      // .then((_) => getDirs());
+                      .then((_) async {
+                    await getDirsAndAlbum();
+                  });
+                },
+                child: Container(
+                  // clipBehavior: Clip.antiAlias,
+                  child:
+                      // ClipSmoothRect(
+                      //   radius: const SmoothBorderRadius.all(
+                      //     SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
+                      //   ),
+                      Stack(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 1 / 1,
+                        child: FutureBuilder<Widget>(
+                          future: chainedAsyncOperations(index),
+                          builder: (context, snapshot) {
+                            Widget child;
+                            if (snapshot.hasData) {
+                              child = SizedBox.expand(child: snapshot.data!);
                             } else {
-                              child = Text("Empty");
+                              if (imageValue != null &&
+                                  imageValue![index] != null &&
+                                  imageValue![index]!.values.isNotEmpty) {
+                                child = BlurHash(
+                                  hash: imageValue![index]!.values.first.$1,
+                                );
+                              } else {
+                                child = Text("Empty");
+                              }
                             }
-                          }
-                          // return child;
-                          return AnimatedSwitcher(
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            duration: const Duration(milliseconds: 200),
-                            child: child,
-                          );
-                        },
-                      ),
-                    ),
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color.fromARGB(0, 0, 0, 0),
-                            Color.fromARGB(200, 0, 0, 0)
-                          ],
+                            // return child;
+                            return AnimatedSwitcher(
+                              transitionBuilder:
+                                  (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                              duration: const Duration(milliseconds: 200),
+                              child: child,
+                            );
+                          },
                         ),
                       ),
-                      alignment: Alignment.bottomRight,
-                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                      child: Text(
-                        directories![index].split("/").last,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color.fromARGB(0, 0, 0, 0),
+                              Color.fromARGB(200, 0, 0, 0)
+                            ],
+                          ),
                         ),
-                        overflow: TextOverflow.fade,
-                        maxLines: 1,
-                        softWrap: false,
+                        alignment: Alignment.bottomRight,
+                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                        child: Text(
+                          directories![index].split("/").last,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.fade,
+                          maxLines: 1,
+                          softWrap: false,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

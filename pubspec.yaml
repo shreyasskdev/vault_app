@@ -58,6 +58,10 @@ dependencies:
 
   flutter_blurhash: ^0.8.2
 
+  # motion detection
+  sensors_plus: ^3.1.0
+  local_auth: ^2.1.8
+
   
 dev_dependencies:
   flutter_test:

@@ -36,9 +36,19 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin integration_test, dev.flutter.plugins.integration_test.IntegrationTestPlugin", e);
     }
     try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.localauth.LocalAuthPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin local_auth_android, io.flutter.plugins.localauth.LocalAuthPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin path_provider_android, io.flutter.plugins.pathprovider.PathProviderPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.sensors.SensorsPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin sensors_plus, dev.fluttercommunity.plus.sensors.SensorsPlugin", e);
     }
   }
 }

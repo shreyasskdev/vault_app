@@ -28,3 +28,7 @@ blurhash = "0.2.1"
 # sled = "0.34.7"
 
 chrono = "0.4.38"
+
+
+# wasm support
+getrandom = { version = "0.2", features = ["js"] }

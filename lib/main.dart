@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:vault/moiton_detector.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
 import 'pages/collections.dart';
