@@ -315,66 +315,69 @@ class _CollectionsPageState extends State<CollectionsPage>
                       //   radius: const SmoothBorderRadius.all(
                       //     SmoothRadius(cornerRadius: 30, cornerSmoothing: 0.5),
                       //   ),
-                      Stack(
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 1 / 1,
-                        child: FutureBuilder<Widget>(
-                          future: chainedAsyncOperations(index),
-                          builder: (context, snapshot) {
-                            Widget child;
-                            if (snapshot.hasData) {
-                              child = SizedBox.expand(child: snapshot.data!);
-                            } else {
-                              if (imageValue != null &&
-                                  imageValue![index] != null &&
-                                  imageValue![index]!.values.isNotEmpty) {
-                                child = BlurHash(
-                                  hash: imageValue![index]!.values.first.$1,
-                                );
+                      ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: Stack(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1 / 1,
+                          child: FutureBuilder<Widget>(
+                            future: chainedAsyncOperations(index),
+                            builder: (context, snapshot) {
+                              Widget child;
+                              if (snapshot.hasData) {
+                                child = SizedBox.expand(child: snapshot.data!);
                               } else {
-                                child = Text("Empty");
+                                if (imageValue != null &&
+                                    imageValue![index] != null &&
+                                    imageValue![index]!.values.isNotEmpty) {
+                                  child = BlurHash(
+                                    hash: imageValue![index]!.values.first.$1,
+                                  );
+                                } else {
+                                  child = Text("Empty");
+                                }
                               }
-                            }
-                            // return child;
-                            return AnimatedSwitcher(
-                              transitionBuilder:
-                                  (Widget child, Animation<double> animation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                );
-                              },
-                              duration: const Duration(milliseconds: 200),
-                              child: child,
-                            );
-                          },
-                        ),
-                      ),
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color.fromARGB(0, 0, 0, 0),
-                              Color.fromARGB(200, 0, 0, 0)
-                            ],
+                              // return child;
+                              return AnimatedSwitcher(
+                                transitionBuilder: (Widget child,
+                                    Animation<double> animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                                duration: const Duration(milliseconds: 200),
+                                child: child,
+                              );
+                            },
                           ),
                         ),
-                        alignment: Alignment.bottomRight,
-                        padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                        child: Text(
-                          directories![index].split("/").last,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color.fromARGB(0, 0, 0, 0),
+                                Color.fromARGB(200, 0, 0, 0)
+                              ],
+                            ),
                           ),
-                          overflow: TextOverflow.fade,
-                          maxLines: 1,
-                          softWrap: false,
+                          alignment: Alignment.bottomRight,
+                          padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                          child: Text(
+                            directories![index].split("/").last,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.fade,
+                            maxLines: 1,
+                            softWrap: false,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

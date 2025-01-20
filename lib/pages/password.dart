@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:vault/src/rust/api/file.dart' as api;
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class Password extends StatefulWidget {
