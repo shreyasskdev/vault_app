@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // import 'package:vault/moiton_detector.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
+import 'package:vault/pages/settings.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
@@ -68,6 +69,10 @@ final GoRouter _router = GoRouter(
       path: "/",
       builder: (context, state) => const Password(),
       routes: [
+        GoRoute(
+          path: "settings",
+          builder: (context, state) => const SettingsPage(),
+        ),
         GoRoute(
           path: "collections",
           builder: (context, state) => const CollectionsPage(),
