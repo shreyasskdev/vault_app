@@ -310,178 +310,191 @@ class _CollectionsPageState extends State<CollectionsPage>
     }
 
     return MotionDetector(
-      child: Scaffold(
-        appBar: AppBar(
-          leading: _isSelectionMode
-              ? IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: _exitSelectionMode,
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            leading: _isSelectionMode
+                ? IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _exitSelectionMode,
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.settings_outlined),
+                    onPressed: () {
+                      context.push("/settings");
+                    },
+                  ),
+            title: _isSelectionMode
+                ? Text("${_selectedIndices.length} selected")
+                : const Text("Vault",
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+            centerTitle: true,
+            actions: <Widget>[
+              if (_isSelectionMode)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _deleteSelectedAlbums,
                 )
-              : null,
-          title: _isSelectionMode
-              ? Text("${_selectedIndices.length} selected")
-              : const Text("Vault",
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-          centerTitle: true,
-          actions: <Widget>[
-            if (_isSelectionMode)
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _deleteSelectedAlbums,
-              )
-            else
-              TouchableOpacity(
-                onPressed: () {
-                  createNewAlbum(context);
-                  HapticFeedback.heavyImpact();
-                },
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                  child: Icon(Icons.add_circle_outline_rounded, size: 25),
-                ),
-              ),
-          ],
-        ),
-        body: SafeArea(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(14),
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 160,
-              childAspectRatio: 1,
-              mainAxisSpacing: 5,
-              crossAxisSpacing: 5,
-            ),
-            itemCount: directories?.length,
-            itemBuilder: (BuildContext context, int index) {
-              final isSelected = _selectedIndices.contains(index);
-
-              return GestureDetector(
-                onTap: () {
-                  if (_isSelectionMode) {
-                    _toggleSelection(index);
-                  } else {
-                    context
-                        .push("/album/${directories?[index].split("/").last}")
-                        .then((_) async {
-                      await getDirsAndAlbum();
-                    });
-                  }
-                },
-                onLongPress: () {
-                  if (!_isSelectionMode) {
-                    _toggleSelectionMode(index);
-                  }
-                },
-                child: Container(
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Stack(
-                          children: [
-                            AspectRatio(
-                              aspectRatio: 1 / 1,
-                              child: FutureBuilder<Widget>(
-                                future: chainedAsyncOperations(index),
-                                builder: (context, snapshot) {
-                                  Widget child;
-                                  if (snapshot.hasData) {
-                                    child =
-                                        SizedBox.expand(child: snapshot.data!);
-                                  } else {
-                                    if (imageValue != null &&
-                                        imageValue![index] != null &&
-                                        imageValue![index]!.values.isNotEmpty) {
-                                      child = BlurHash(
-                                        hash:
-                                            imageValue![index]!.values.first.$1,
-                                      );
-                                    } else {
-                                      child = const Text("Empty");
-                                    }
-                                  }
-                                  return AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 200),
-                                    child: child,
-                                  );
-                                },
-                              ),
-                            ),
-                            Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Color.fromARGB(0, 0, 0, 0),
-                                    Color.fromARGB(200, 0, 0, 0)
-                                  ],
-                                ),
-                              ),
-                              alignment: Alignment.bottomRight,
-                              padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                              child: Text(
-                                directories![index].split("/").last,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.fade,
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_isSelectionMode)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                      if (_isSelectionMode)
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.white.withOpacity(0.8),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.grey.withOpacity(0.5),
-                                width: 2,
-                              ),
-                            ),
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: Colors.white,
-                                  )
-                                : null,
-                          ),
-                        ),
-                    ],
+              else
+                TouchableOpacity(
+                  onPressed: () {
+                    createNewAlbum(context);
+                    HapticFeedback.heavyImpact();
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.only(
+                        right: 15, left: 10, top: 10, bottom: 10),
+                    child: Icon(Icons.add_circle_outline_rounded, size: 25),
                   ),
                 ),
-              );
-            },
+            ],
+          ),
+          body: SafeArea(
+            child: GridView.builder(
+              padding: const EdgeInsets.all(14),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 160,
+                childAspectRatio: 1,
+                mainAxisSpacing: 5,
+                crossAxisSpacing: 5,
+              ),
+              itemCount: directories?.length,
+              itemBuilder: (BuildContext context, int index) {
+                final isSelected = _selectedIndices.contains(index);
+
+                return GestureDetector(
+                  onTap: () {
+                    if (_isSelectionMode) {
+                      _toggleSelection(index);
+                    } else {
+                      context
+                          .push("/album/${directories?[index].split("/").last}")
+                          .then((_) async {
+                        await getDirsAndAlbum();
+                      });
+                    }
+                  },
+                  onLongPress: () {
+                    if (!_isSelectionMode) {
+                      _toggleSelectionMode(index);
+                    }
+                  },
+                  child: Container(
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: Stack(
+                            children: [
+                              AspectRatio(
+                                aspectRatio: 1 / 1,
+                                child: FutureBuilder<Widget>(
+                                  future: chainedAsyncOperations(index),
+                                  builder: (context, snapshot) {
+                                    Widget child;
+                                    if (snapshot.hasData) {
+                                      child = SizedBox.expand(
+                                          child: snapshot.data!);
+                                    } else {
+                                      if (imageValue != null &&
+                                          imageValue![index] != null &&
+                                          imageValue![index]!
+                                              .values
+                                              .isNotEmpty) {
+                                        child = BlurHash(
+                                          hash: imageValue![index]!
+                                              .values
+                                              .first
+                                              .$1,
+                                        );
+                                      } else {
+                                        child = const Text("Empty");
+                                      }
+                                    }
+                                    return AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      child: child,
+                                    );
+                                  },
+                                ),
+                              ),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color.fromARGB(0, 0, 0, 0),
+                                      Color.fromARGB(200, 0, 0, 0)
+                                    ],
+                                  ),
+                                ),
+                                alignment: Alignment.bottomRight,
+                                padding:
+                                    const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                                child: Text(
+                                  directories![index].split("/").last,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.fade,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_isSelectionMode)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        if (_isSelectionMode)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.white.withOpacity(0.8),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
