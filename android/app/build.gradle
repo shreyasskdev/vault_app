@@ -39,10 +39,28 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Debug version will be com.example.myapp.debug
+            applicationIdSuffix ".debug"
+            resValue "string", "app_name", "Vault Debug"
+        }
+        profile {
+            // Profile version will be com.example.myapp.profile
+            applicationIdSuffix ".profile"
+            resValue "string", "app_name", "Vault Profile"
+        }
+//        release {
+//            // TODO: Add your own signing config for the release build.
+//            // Signing with the debug keys for now, so `flutter run --release` works.
+//            signingConfig = signingConfigs.debug
+//        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Release version will stay as com.example.myapp
+            resValue "string", "app_name", "Vault"
+//            signingConfig signingConfigs.release
             signingConfig = signingConfigs.debug
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
