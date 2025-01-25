@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 // import 'package:vault/moiton_detector.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
-import 'package:vault/pages/settings.dart';
+import 'package:vault/pages/settings/about.dart';
+import 'package:vault/pages/settings/appearance_settings.dart';
+import 'package:vault/pages/settings/privacy_settings.dart';
+import 'package:vault/pages/settings/settings.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
@@ -29,7 +32,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: "Wallet",
+      title: "Vault",
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
@@ -70,9 +73,22 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => const Password(),
       routes: [
         GoRoute(
-          path: "settings",
-          builder: (context, state) => const SettingsPage(),
-        ),
+            path: "settings",
+            builder: (context, state) => const SettingsPage(),
+            routes: [
+              GoRoute(
+                path: "privacy",
+                builder: (context, state) => const PrivacySettings(),
+              ),
+              GoRoute(
+                path: "appearance",
+                builder: (context, state) => const AppearanceSettings(),
+              ),
+              GoRoute(
+                path: "about",
+                builder: (context, state) => const AboutPage(),
+              ),
+            ]),
         GoRoute(
           path: "collections",
           builder: (context, state) => const CollectionsPage(),
