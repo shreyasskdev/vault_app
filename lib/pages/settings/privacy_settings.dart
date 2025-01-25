@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:vault/settings_model.dart';
+import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
 
 class PrivacySettings extends StatefulWidget {
@@ -25,7 +29,7 @@ class _PrivacySettingsState extends State<PrivacySettings> {
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text("Privacy",
+        title: const Text("Appearance",
             style: TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
@@ -39,17 +43,22 @@ class _PrivacySettingsState extends State<PrivacySettings> {
               _buildMenuSection(
                 context,
                 [
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.lock,
+                  MenuItemToggle(
+                    // context: context,
+                    icon: CupertinoIcons.brightness,
+                    // icon: Icons.sunny,
                     iconColor: theme.colorScheme.primary,
-                    title: "Privacy",
-                    subtitle: "Privacy and security settings",
-                    onTap: () => {},
+                    title: "Teft protection",
+                    subtitle: "Theft protection with gyrosope",
+                    value: Provider.of<SettingsModel>(context).TheftProtection,
+                    onChanged: (value) => {
+                      Provider.of<SettingsModel>(context, listen: false)
+                          .toggleTheftProtection()
+                    },
                   ),
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.palette,
+                  MenuItem(
+                    icon: CupertinoIcons.paintbrush,
+                    // icon: Icons.palette,
                     iconColor: theme.colorScheme.primary,
                     title: "Appearance",
                     subtitle: "Customize app appearance",
@@ -62,9 +71,9 @@ class _PrivacySettingsState extends State<PrivacySettings> {
               _buildMenuSection(
                 context,
                 [
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.info,
+                  MenuItem(
+                    icon: CupertinoIcons.info,
+                    // icon: Icons.info,
                     iconColor: theme.colorScheme.primary,
                     title: "About",
                     subtitle: "Learn more about this app",
@@ -91,56 +100,6 @@ class _PrivacySettingsState extends State<PrivacySettings> {
         // ),
       ),
       child: Column(children: children),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required BuildContext context,
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool divider = true,
-  }) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(icon, color: iconColor),
-          title: Text(
-            title,
-            // style: textTheme.titleMedium?.copyWith(
-            //   fontWeight: FontWeight.w500,
-            // ),
-            style: textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color!.withAlpha(160),
-            ),
-          ),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: theme.dividerColor,
-            size: 20,
-          ),
-          onTap: onTap,
-        ),
-        if (divider)
-          Divider(
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-            color: theme.dividerColor.withAlpha(25),
-          ),
-      ],
     );
   }
 }
