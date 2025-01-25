@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -70,17 +72,16 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildMenuSection(
                 context,
                 [
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.lock,
+                  MenuItem(
+                    // context: context,
+                    icon: CupertinoIcons.lock,
                     iconColor: theme.colorScheme.primary,
                     title: "Privacy",
                     subtitle: "Privacy and security settings",
                     onTap: () => context.push("/settings/privacy"),
                   ),
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.palette,
+                  MenuItem(
+                    icon: CupertinoIcons.paintbrush,
                     iconColor: theme.colorScheme.primary,
                     title: "Appearance",
                     subtitle: "Customize app appearance",
@@ -93,9 +94,8 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildMenuSection(
                 context,
                 [
-                  _buildMenuItem(
-                    context: context,
-                    icon: Icons.info,
+                  MenuItem(
+                    icon: CupertinoIcons.info,
                     iconColor: theme.colorScheme.primary,
                     title: "About",
                     subtitle: "Learn more about this app",
@@ -124,54 +124,63 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(children: children),
     );
   }
-
-  Widget _buildMenuItem({
-    required BuildContext context,
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    bool divider = true,
-  }) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(icon, color: iconColor),
-          title: Text(
-            title,
-            // style: textTheme.titleMedium?.copyWith(
-            //   fontWeight: FontWeight.w500,
-            // ),
-            style: textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodySmall?.color!.withAlpha(160),
-            ),
-          ),
-          trailing: Icon(
-            Icons.chevron_right_rounded,
-            color: theme.dividerColor,
-            size: 20,
-          ),
-          onTap: onTap,
-        ),
-        if (divider)
-          Divider(
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-            color: theme.dividerColor.withAlpha(25),
-          ),
-      ],
-    );
-  }
 }
+//   Widget _buildMenuItem({
+//     required BuildContext context,
+//     required IconData icon,
+//     required Color iconColor,
+//     required String title,
+//     required String subtitle,
+//     required VoidCallback onTap,
+//     bool divider = true,
+//   }) {
+//     final theme = Theme.of(context);
+//     final textTheme = theme.textTheme;
+
+//     return Column(
+//       children: [
+//         ClipRRect(
+//           borderRadius:
+//               BorderRadius.circular(20.0), // Match your design's border radius
+//           child: Material(
+//             color: theme.cardColor, // Set background color
+//             child: InkWell(
+//               onTap: onTap,
+//               splashColor:
+//                   theme.colorScheme.primary.withAlpha(25), // Customize splash
+//               highlightColor: Colors.transparent, // Disable highlight if needed
+//               child: ListTile(
+//                 leading: Icon(icon, color: iconColor),
+//                 title: Text(
+//                   title,
+//                   style: textTheme.bodyMedium?.copyWith(
+//                     color: theme.textTheme.bodySmall?.color,
+//                     fontWeight: FontWeight.w500,
+//                   ),
+//                 ),
+//                 subtitle: Text(
+//                   subtitle,
+//                   style: textTheme.bodyMedium?.copyWith(
+//                     color: theme.textTheme.bodySmall?.color!.withAlpha(160),
+//                   ),
+//                 ),
+//                 trailing: Icon(
+//                   Icons.chevron_right_rounded,
+//                   color: theme.dividerColor,
+//                   size: 20,
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//         if (divider)
+//           Divider(
+//             height: 1,
+//             indent: 20,
+//             endIndent: 20,
+//             color: theme.dividerColor.withAlpha(25),
+//           ),
+//       ],
+//     );
+//   }
+// }

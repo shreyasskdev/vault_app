@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 // import 'package:vault/moiton_detector.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
@@ -6,6 +7,7 @@ import 'package:vault/pages/settings/about.dart';
 import 'package:vault/pages/settings/appearance_settings.dart';
 import 'package:vault/pages/settings/privacy_settings.dart';
 import 'package:vault/pages/settings/settings.dart';
+import 'package:vault/settings_model.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
@@ -18,7 +20,12 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 
 Future<void> main() async {
   await RustLib.init();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => SettingsModel(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -31,11 +38,14 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
+    final settings = Provider.of<SettingsModel>(context);
+
     return MaterialApp.router(
       title: "Vault",
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
+      themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
       routerConfig: _router,
     );
   }
