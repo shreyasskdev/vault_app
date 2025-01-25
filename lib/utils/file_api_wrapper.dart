@@ -1,11 +1,5 @@
-import 'dart:isolate';
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:vault/pages/password.dart';
 import 'package:vault/src/rust/api/file.dart' as file_api;
-// import 'package:vault/src/rust/api/encryption.dart' as encryption_api;
 import 'package:vault/src/rust/frb_generated.dart';
 
 mixin FileApiWrapper {
@@ -37,7 +31,6 @@ mixin FileApiWrapper {
 
   Future<Map<String, (String, double)>?> getAlbumThumbWrapper(dir) async {
     try {
-      print(dir);
       return await file_api.getAlbumThumb(dir: dir);
     } catch (e) {
       debugPrint("Vault error: WARN: $e");
@@ -84,7 +77,6 @@ mixin FileApiWrapper {
 }
 Future<Uint8List> _isolateGetFile(String path) async {
   await RustLib.init();
-  print(" YOOOO >>>>> " + path);
 
   Uint8List value =
       await file_api.getFile(path: path).then((value) => value).catchError((e) {

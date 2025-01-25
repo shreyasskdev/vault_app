@@ -37,7 +37,7 @@ class _PhotoViewState extends State<PhotoView> {
         files = entities.whereType<File>().toList();
       });
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -81,7 +81,7 @@ class _PhotoViewState extends State<PhotoView> {
                       fit: BoxFit.contain,
                       width: double.infinity,
                       errorBuilder: (context, error, stackTrace) {
-                        print("Wallet_Error: $error");
+                        debugPrint("Vault_Error: $error");
                         return const Center(
                           child: Text("error"),
                         );
