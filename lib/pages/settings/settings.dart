@@ -12,7 +12,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  static const double _menuSpacing = 15.0;
+  static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
 
   @override
@@ -69,9 +69,10 @@ class _SettingsPageState extends State<SettingsPage> {
               //   ],
               // ),
               const SizedBox(height: _menuSpacing),
-              _buildMenuSection(
-                context,
-                [
+              MenuSection(
+                borderRadius: _borderRadius,
+                menuSpacing: _menuSpacing,
+                children: [
                   MenuItem(
                     // context: context,
                     icon: CupertinoIcons.lock,
@@ -91,9 +92,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
               const SizedBox(height: _menuSpacing),
-              _buildMenuSection(
-                context,
-                [
+              MenuSection(
+                borderRadius: _borderRadius,
+                menuSpacing: _menuSpacing,
+                children: [
                   MenuItem(
                     icon: CupertinoIcons.info,
                     iconColor: theme.colorScheme.primary,
@@ -111,19 +113,19 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildMenuSection(BuildContext context, List<Widget> children) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: _menuSpacing),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(_borderRadius),
-        // border: Border.all(
-        //   color: Theme.of(context).dividerColor.withOpacity(0.1),
-        // ),
-      ),
-      child: Column(children: children),
-    );
-  }
+  // Widget _buildMenuSection(BuildContext context, List<Widget> children) {
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: _menuSpacing),
+  //     decoration: BoxDecoration(
+  //       color: Theme.of(context).colorScheme.surfaceContainerLow,
+  //       borderRadius: BorderRadius.circular(_borderRadius),
+  //       // border: Border.all(
+  //       //   color: Theme.of(context).dividerColor.withOpacity(0.1),
+  //       // ),
+  //     ),
+  //     child: Column(children: children),
+  //   );
+  // }
 }
 //   Widget _buildMenuItem({
 //     required BuildContext context,

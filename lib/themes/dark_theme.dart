@@ -97,6 +97,7 @@ ThemeData darkTheme = ThemeData(
     displayMedium: TextStyle(color: colorScheme.onSurface),
     displayLarge: TextStyle(color: colorScheme.onSurface),
   ),
+  fontFamily: GoogleFonts.poppins().fontFamily,
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -138,4 +139,55 @@ ThemeData darkTheme = ThemeData(
   dialogTheme: DialogTheme(
     backgroundColor: colorScheme.surfaceContainerHighest,
   ),
+  switchTheme: SwitchThemeData(
+    thumbColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.surface; // Thumb color when ON
+      }
+      return colorScheme.surfaceBright; // Thumb color when OFF
+    }),
+    trackColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.primary; // Track color when ON
+      }
+      return colorScheme.surface; // Track color when OFF
+    }),
+    trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.primary; // Thumb color when ON
+      }
+      return colorScheme.surfaceBright; // Thumb color when OFF
+    }),
+  ),
 );
+
+
+// import 'package:flutter/material.dart';
+// import 'package:google_fonts/google_fonts.dart';
+
+// ThemeData darkTheme = ThemeData(
+//   brightness: Brightness.dark,
+//   scaffoldBackgroundColor: Colors.black,
+//   colorScheme: ColorScheme.fromSeed(
+//     seedColor: Colors.white,
+//     brightness: Brightness.dark,
+//     primary: Colors.white,
+//     onPrimary: Colors.black,
+//     background: Colors.black,
+//     onBackground: Colors.white,
+//     surface: Colors.black,
+//     onSurface: Colors.white,
+//   ),
+//   appBarTheme: AppBarTheme(
+//     backgroundColor: Colors.black,
+//     foregroundColor: Colors.white,
+//   ),
+//   textTheme: GoogleFonts.poppinsTextTheme().copyWith(
+//     bodySmall: const TextStyle(color: Colors.white),
+//     bodyMedium: const TextStyle(color: Colors.white),
+//     bodyLarge: const TextStyle(color: Colors.white),
+//     labelSmall: const TextStyle(color: Colors.white),
+//     labelMedium: const TextStyle(color: Colors.white),
+//     labelLarge: const TextStyle(color: Colors.white),
+//   ),
+// );

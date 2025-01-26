@@ -13,7 +13,7 @@ class PrivacySettings extends StatefulWidget {
 }
 
 class _PrivacySettingsState extends State<PrivacySettings> {
-  static const double _menuSpacing = 15.0;
+  static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
 
   @override
@@ -40,9 +40,10 @@ class _PrivacySettingsState extends State<PrivacySettings> {
           child: Column(
             children: [
               const SizedBox(height: _menuSpacing),
-              _buildMenuSection(
-                context,
-                [
+              MenuSection(
+                borderRadius: _borderRadius,
+                menuSpacing: _menuSpacing,
+                children: [
                   MenuItemToggle(
                     // context: context,
                     icon: CupertinoIcons.brightness,
@@ -68,9 +69,10 @@ class _PrivacySettingsState extends State<PrivacySettings> {
                 ],
               ),
               const SizedBox(height: _menuSpacing),
-              _buildMenuSection(
-                context,
-                [
+              MenuSection(
+                borderRadius: _borderRadius,
+                menuSpacing: _menuSpacing,
+                children: [
                   MenuItem(
                     icon: CupertinoIcons.info,
                     // icon: Icons.info,
@@ -86,20 +88,6 @@ class _PrivacySettingsState extends State<PrivacySettings> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildMenuSection(BuildContext context, List<Widget> children) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: _menuSpacing),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(_borderRadius),
-        // border: Border.all(
-        //   color: Theme.of(context).dividerColor.withOpacity(0.1),
-        // ),
-      ),
-      child: Column(children: children),
     );
   }
 }
