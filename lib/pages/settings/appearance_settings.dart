@@ -1,18 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vault/settings_model.dart';
 import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
 
-class AppearanceSettings extends StatefulWidget {
+class AppearanceSettings extends ConsumerStatefulWidget {
   const AppearanceSettings({super.key});
 
   @override
-  State<AppearanceSettings> createState() => _AppearanceSettingsState();
+  ConsumerState<AppearanceSettings> createState() => _AppearanceSettingsState();
 }
 
-class _AppearanceSettingsState extends State<AppearanceSettings> {
+class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
   static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
 
@@ -51,11 +51,9 @@ class _AppearanceSettingsState extends State<AppearanceSettings> {
                     iconColor: theme.colorScheme.primary,
                     title: "Dark Mode",
                     subtitle: "Toggle Dark mode",
-                    value: Provider.of<SettingsModel>(context).darkmode,
-                    onChanged: (value) => {
-                      Provider.of<SettingsModel>(context, listen: false)
-                          .toggleDarkmode()
-                    },
+                    value: ref.watch(SettingsModelProvider).darkmode,
+                    onChanged: (value) =>
+                        {ref.read(SettingsModelProvider).toggleDarkmode()},
                   ),
                   MenuItem(
                     icon: CupertinoIcons.paintbrush,

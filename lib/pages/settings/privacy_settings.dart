@@ -1,18 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vault/settings_model.dart';
 import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
 
-class PrivacySettings extends StatefulWidget {
+class PrivacySettings extends ConsumerStatefulWidget {
   const PrivacySettings({super.key});
 
   @override
-  State<PrivacySettings> createState() => _PrivacySettingsState();
+  ConsumerState<PrivacySettings> createState() => _PrivacySettingsState();
 }
 
-class _PrivacySettingsState extends State<PrivacySettings> {
+class _PrivacySettingsState extends ConsumerState<PrivacySettings> {
   static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
 
@@ -51,10 +51,9 @@ class _PrivacySettingsState extends State<PrivacySettings> {
                     iconColor: theme.colorScheme.primary,
                     title: "Teft protection",
                     subtitle: "Theft protection with gyrosope",
-                    value: Provider.of<SettingsModel>(context).TheftProtection,
+                    value: ref.watch(SettingsModelProvider).TheftProtection,
                     onChanged: (value) => {
-                      Provider.of<SettingsModel>(context, listen: false)
-                          .toggleTheftProtection()
+                      ref.read(SettingsModelProvider).toggleTheftProtection()
                     },
                   ),
                   MenuItem(

@@ -76,6 +76,7 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     final imageData = await (getFileThumbWrapper(imagePath));
 
     return Image.memory(
+      gaplessPlayback: true,
       Uint8List.fromList(imageData),
       // cacheWidth: 200,
       // cacheHeight: ((size.height / size.width) * 200).toInt(),
