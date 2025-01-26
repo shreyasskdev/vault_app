@@ -49,7 +49,8 @@ dependencies:
   sensors_plus: ^3.1.0
   local_auth: ^2.1.8
 
-  provider: ^6.1.2
+  # provider: ^6.1.2
+  flutter_riverpod: ^2.6.1
 
   rust_lib_vault:
     path: rust_builder

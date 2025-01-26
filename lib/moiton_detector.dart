@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:async';
 
 import 'package:vault/settings_model.dart';
 
-class MotionDetector extends StatefulWidget {
+class MotionDetector extends ConsumerStatefulWidget {
   final Widget child;
 
   const MotionDetector({super.key, required this.child});
@@ -16,7 +16,7 @@ class MotionDetector extends StatefulWidget {
   _MotionDetectorState createState() => _MotionDetectorState();
 }
 
-class _MotionDetectorState extends State<MotionDetector> {
+class _MotionDetectorState extends ConsumerState<MotionDetector> {
   StreamSubscription<GyroscopeEvent>? _gyroSubscription;
   final double _threshold = 2.0;
   final LocalAuthentication _auth = LocalAuthentication();
@@ -25,7 +25,7 @@ class _MotionDetectorState extends State<MotionDetector> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final settings = Provider.of<SettingsModel>(context);
+    final settings = ref.watch(SettingsModelProvider);
 
     // Remove previous listener to avoid duplicates
     settings.removeListener(_onSettingsChanged);
@@ -37,7 +37,8 @@ class _MotionDetectorState extends State<MotionDetector> {
   }
 
   void _onSettingsChanged() {
-    final settings = Provider.of<SettingsModel>(context, listen: false);
+    final settings = ref.read(SettingsModelProvider);
+    ;
 
     if (settings.TheftProtection) {
       _startListening();
@@ -98,7 +99,7 @@ class _MotionDetectorState extends State<MotionDetector> {
 
   @override
   void dispose() {
-    final settings = Provider.of<SettingsModel>(context, listen: false);
+    final settings = ref.read(SettingsModelProvider);
     settings.removeListener(_onSettingsChanged);
     _stopListening();
     super.dispose();

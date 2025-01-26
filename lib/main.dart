@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:provider/provider.dart';
 // import 'package:vault/moiton_detector.dart';
 import 'package:vault/pages/password.dart';
 import 'package:vault/pages/photo.dart';
@@ -21,24 +22,23 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 Future<void> main() async {
   await RustLib.init();
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => SettingsModel(),
-      child: const MyApp(),
+    const ProviderScope(
+      child: MyApp(),
     ),
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
-    final settings = Provider.of<SettingsModel>(context);
+    final settings = ref.watch(SettingsModelProvider);
 
     return MaterialApp.router(
       title: "Vault",

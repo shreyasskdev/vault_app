@@ -8,7 +8,6 @@ import 'dart:io';
 
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-// import 'package:vault/src/rust/api/file.dart' as api;
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -44,6 +43,7 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
         "${widget.url}/${imageValue?[index].keys.toList().first}");
 
     return Image.memory(
+      gaplessPlayback: true,
       Uint8List.fromList(imageData),
       fit: BoxFit.contain,
       width: double.infinity,

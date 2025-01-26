@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SettingsModel extends ChangeNotifier {
   bool _darkMode = true;
@@ -17,3 +18,7 @@ class SettingsModel extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+final SettingsModelProvider = ChangeNotifierProvider<SettingsModel>((ref) {
+  return SettingsModel();
+});

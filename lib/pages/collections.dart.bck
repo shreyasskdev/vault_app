@@ -90,6 +90,7 @@ class _CollectionsPageState extends State<CollectionsPage>
         "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}");
 
     return Image.memory(
+      gaplessPlayback: true,
       Uint8List.fromList(imageData),
       // cacheWidth: 200,
       // cacheHeight: ((size.height / size.width) * 200).toInt(),
