@@ -1,4 +1,48 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+// Widget _buildMenuSection(BuildContext context, List<Widget> children) {
+//   return Container(
+//     margin: const EdgeInsets.symmetric(horizontal: _menuSpacing),
+//     decoration: BoxDecoration(
+//       color: Theme.of(context).colorScheme.surfaceContainerLow,
+//       borderRadius: BorderRadius.circular(_borderRadius),
+//       // border: Border.all(
+//       //   color: Theme.of(context).dividerColor.withOpacity(0.1),
+//       // ),
+//     ),
+//     child: Column(children: children),
+//   );
+// }
+
+class MenuSection extends StatelessWidget {
+  final double menuSpacing;
+  final double borderRadius;
+  final List<Widget> children;
+
+  const MenuSection({
+    super.key,
+    required this.menuSpacing,
+    required this.borderRadius,
+    required this.children,
+  });
+  // const MenuSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: menuSpacing),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(borderRadius),
+        // border: Border.all(
+        //   color: Theme.of(context).dividerColor.withOpacity(0.1),
+        // ),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
 
 class MenuItem extends StatelessWidget {
   final IconData icon;
@@ -10,7 +54,7 @@ class MenuItem extends StatelessWidget {
   final Widget? trailing; // New parameter for trailing widget
 
   const MenuItem({
-    Key? key,
+    super.key,
     required this.icon,
     required this.iconColor,
     required this.title,
@@ -18,7 +62,7 @@ class MenuItem extends StatelessWidget {
     required this.onTap,
     this.divider = true,
     this.trailing,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +74,10 @@ class MenuItem extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(20.0),
           child: Material(
-            color: theme.cardColor,
+            color: theme.colorScheme.surfaceContainerLow,
             child: InkWell(
               onTap: onTap,
-              splashColor: theme.colorScheme.primary.withOpacity(0.1),
+              splashColor: theme.colorScheme.primary.withAlpha(25),
               highlightColor: Colors.transparent,
               child: ListTile(
                 leading: Icon(icon, color: iconColor),
@@ -41,7 +85,8 @@ class MenuItem extends StatelessWidget {
                   title,
                   style: textTheme.bodyMedium?.copyWith(
                     color: theme.textTheme.bodySmall?.color,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
                   ),
                 ),
                 subtitle: Text(
@@ -77,7 +122,7 @@ class MenuItemToggle extends StatelessWidget {
   final bool divider;
 
   const MenuItemToggle({
-    Key? key,
+    super.key,
     required this.icon,
     required this.iconColor,
     required this.title,
@@ -85,7 +130,7 @@ class MenuItemToggle extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.divider = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
