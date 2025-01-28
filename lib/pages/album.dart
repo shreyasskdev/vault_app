@@ -50,7 +50,9 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
     }
 
     final bytes = await image.readAsBytes();
-    await File(image.path).delete(); // Delete cached file
+    if (Platform.isAndroid) {
+      await File(image.path).delete(); // Delete cached file
+    }
     final Uint8List uint8list = Uint8List.fromList(bytes);
 
     saveFileWrapper(uint8list, '$directory/${widget.name}');
