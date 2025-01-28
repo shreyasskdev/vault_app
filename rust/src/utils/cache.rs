@@ -75,7 +75,7 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
     }
 
     // resizing the image
-    let thumbnail = img.resize_to_fill(200, 200, imageops::FilterType::Triangle).to_rgb8();
+    let thumbnail = img.resize_to_fill(200, (200.0 * img.height() as f64 / img.width() as f64) as u32, imageops::FilterType::Triangle).to_rgb8();
     let mut buffer = Vec::new();
     image::write_buffer_with_format(
         &mut Cursor::new(&mut buffer),

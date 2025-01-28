@@ -26,6 +26,7 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
   late final PageController pageController;
 
   List<Map<String, (String, double)>>? imageValue;
+  bool update = true;
 
   @override
   void initState() {
@@ -43,7 +44,6 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
         "${widget.url}/${imageValue?[index].keys.toList().first}");
 
     return Image.memory(
-      gaplessPlayback: true,
       Uint8List.fromList(imageData),
       fit: BoxFit.contain,
       width: double.infinity,
@@ -88,37 +88,51 @@ class _PhotoViewState extends State<PhotoView> with fileapi.FileApiWrapper {
               child: FutureBuilder<Widget>(
                 future: chainedAsyncOperations(index),
                 builder: (context, snapshot) {
+                  Widget child;
+                  print("object");
                   if (snapshot.hasData) {
-                    return snapshot.data!;
+                    child = snapshot.data!;
                   } else {
-                    return Center(
-                      child: Stack(
-                        children: [
-                          imageValue == null
-                              ? const SizedBox()
-                              : Center(
-                                  child: AspectRatio(
-                                    aspectRatio: imageValue![index]
-                                        .values
-                                        .toList()
-                                        .last
-                                        .$2,
-                                    child: BlurHash(
-                                        hash: imageValue![index]
-                                            .values
-                                            .toList()
-                                            .last
-                                            .$1),
-                                  ),
+                    child = Stack(
+                      children: [
+                        imageValue == null
+                            ? const SizedBox()
+                            : Center(
+                                child: AspectRatio(
+                                  aspectRatio: imageValue![index]
+                                      .values
+                                      .toList()
+                                      .last
+                                      .$2,
+                                  child: BlurHash(
+                                      hash: imageValue![index]
+                                          .values
+                                          .toList()
+                                          .last
+                                          .$1),
                                 ),
-                          const Center(
-                              child: CircularProgressIndicator(
-                            color: Color.fromARGB(50, 255, 255, 255),
-                          )),
-                        ],
-                      ),
+                              ),
+                        const Center(
+                            child: CircularProgressIndicator(
+                          color: Color.fromARGB(50, 255, 255, 255),
+                        )),
+                      ],
                     );
                   }
+
+                  return Center(
+                    child: AnimatedSwitcher(
+                      transitionBuilder:
+                          (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        );
+                      },
+                      duration: const Duration(milliseconds: 200),
+                      child: child,
+                    ),
+                  );
                 },
               ),
               initialScale: PhotoViewComputedScale.contained,
