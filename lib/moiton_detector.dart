@@ -5,7 +5,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:async';
 
-import 'package:vault/settings_model.dart';
+import 'package:vault/providers.dart';
 
 class MotionDetector extends ConsumerStatefulWidget {
   final Widget child;
