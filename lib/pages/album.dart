@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'dart:io';
@@ -13,15 +14,16 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
-class AlbumPage extends StatefulWidget {
+class AlbumPage extends ConsumerStatefulWidget {
   final String name;
   const AlbumPage({super.key, required this.name});
 
   @override
-  State<AlbumPage> createState() => _AlbumPageState();
+  ConsumerState<AlbumPage> createState() => _AlbumPageState();
 }
 
-class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
+class _AlbumPageState extends ConsumerState<AlbumPage>
+    with fileapi.FileApiWrapper {
   // List<File> files = [];
   List<Map<String, (String, double)>> files = [];
   String photoDirectoryPath = "";
@@ -75,7 +77,7 @@ class _AlbumPageState extends State<AlbumPage> with fileapi.FileApiWrapper {
 
   Future<Widget> chainedAsyncOperations(index) async {
     String imagePath = "$photoDirectoryPath/${files[index].keys.first}";
-    final imageData = await (getFileThumbWrapper(imagePath));
+    final imageData = await (getFileThumbWrapper(imagePath, ref));
 
     return Image.memory(
       gaplessPlayback: true,

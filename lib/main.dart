@@ -8,7 +8,7 @@ import 'package:vault/pages/settings/about.dart';
 import 'package:vault/pages/settings/appearance_settings.dart';
 import 'package:vault/pages/settings/privacy_settings.dart';
 import 'package:vault/pages/settings/settings.dart';
-import 'package:vault/settings_model.dart';
+import 'package:vault/providers.dart';
 import 'pages/collections.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';

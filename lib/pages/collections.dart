@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:flutter_shimmer/flutter_shimmer.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
@@ -14,14 +15,14 @@ import 'package:vault/widget/touchable.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
-class CollectionsPage extends StatefulWidget {
+class CollectionsPage extends ConsumerStatefulWidget {
   const CollectionsPage({super.key});
 
   @override
-  State<CollectionsPage> createState() => _CollectionsPageState();
+  ConsumerState<CollectionsPage> createState() => _CollectionsPageState();
 }
 
-class _CollectionsPageState extends State<CollectionsPage>
+class _CollectionsPageState extends ConsumerState<CollectionsPage>
     with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
 
@@ -92,7 +93,8 @@ class _CollectionsPageState extends State<CollectionsPage>
     }
     print("THIS >> ${directories?[index]}/${imageValue![index]!.keys.first}");
     Uint8List imageData = await getFileThumbWrapper(
-        "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}");
+        "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}",
+        ref);
 
     return Image.memory(
       gaplessPlayback: true,

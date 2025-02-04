@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:vault/providers.dart';
 import 'package:vault/src/rust/api/file.dart' as file_api;
 import 'package:vault/src/rust/frb_generated.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 mixin FileApiWrapper {
   Future<void> createDirWrapper(path, albumname) async {
@@ -20,7 +22,7 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<Map<String, (String, double)>> getImagesWrapper(path) async {
+  Future<Map<String, (String, double)>> getImagesWrapper(String path) async {
     try {
       return await file_api.getImages(dir: path);
     } catch (e) {
@@ -29,7 +31,8 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<Map<String, (String, double)>?> getAlbumThumbWrapper(dir) async {
+  Future<Map<String, (String, double)>?> getAlbumThumbWrapper(
+      String dir) async {
     try {
       return await file_api.getAlbumThumb(dir: dir);
     } catch (e) {
@@ -38,12 +41,30 @@ mixin FileApiWrapper {
     }
   }
 
-  Future<Uint8List> getFileWrapper(String path) async {
-    return await compute(_isolateGetFile, path);
+  Future<Uint8List> getFileWrapper(String path, WidgetRef ref) async {
+    final imageCache = ref.read(ImageCacheProvider);
+    final cachedImage = imageCache.cachedImage[path];
+
+    if (cachedImage != null) {
+      return cachedImage;
+    }
+
+    final data = await compute(_isolateGetFile, path);
+    imageCache.addImage(path, data);
+    return data;
   }
 
-  Future<Uint8List> getFileThumbWrapper(String path) async {
-    return await compute(_isolateGetFileThumb, path);
+  Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
+    print("shiiii" + path);
+    final imageCache = ref.read(ImageCacheProvider);
+    final cachedImage = imageCache.cachedThumbImage[path];
+
+    if (cachedImage != null) {
+      return cachedImage;
+    }
+    final data = await compute(_isolateGetFileThumb, path);
+    imageCache.addThumbImage(path, data);
+    return data;
   }
 
   Future<void> saveFileWrapper(data, path) async {
