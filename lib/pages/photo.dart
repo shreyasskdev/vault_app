@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
-import 'package:vault/providers.dart';
 import 'package:vault/widget/touchable.dart';
 import 'dart:io';
 
@@ -23,163 +23,6 @@ class PhotoView extends ConsumerStatefulWidget {
   ConsumerState<PhotoView> createState() => _PhotoViewState();
 }
 
-// class _PhotoViewState extends ConsumerState<PhotoView>
-//     with fileapi.FileApiWrapper {
-//   late final PageController pageController;
-
-//   List<Map<String, (String, double)>>? imageValue;
-//   Uint8List? finalImage;
-//   Uint8List? thumbImage;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     // getImages();
-//     pageController = PageController(initialPage: widget.index);
-//     thumbLoad(widget.index).then((_) => {chainedAsyncOperations(widget.index)});
-//   }
-
-//   Future<int> thumbLoad(index) async {
-//     // await getFileThumbWrapper(
-//     //         "${widget.url}/${imageValue?[index].keys.toList().first}", ref)
-//     //     .then((value) {
-//     //   thumbImage ??= value;
-//     // });
-//     await getImagesWrapper(widget.url).then((value) {
-//       imageValue ??= sortMapToList(value);
-//     });
-
-//     setState(() {
-//       thumbImage = ref.read(ImageCacheProvider).cachedThumbImage[
-//           "${widget.url}/${imageValue?[index].keys.toList().first}"];
-//     });
-//     return 1;
-//   }
-
-//   void chainedAsyncOperations(index) async {
-//     // await getFileThumbWrapper(
-//     //         "${widget.url}/${imageValue?[index].keys.toList().first}", ref)
-//     //     .then((value) {
-//     //   thumbImage ??= value;
-//     // });
-//     // await getImagesWrapper(widget.url).then((value) {
-//     //   imageValue ??= sortMapToList(value);
-//     // });
-
-//     Uint8List imageData = await getFileWrapper(
-//         "${widget.url}/${imageValue?[index].keys.toList().first}", ref);
-//     setState(() {
-//       finalImage = imageData;
-//       thumbImage = null;
-//     });
-//     // return Image.memory(
-//     //   Uint8List.fromList(imageData),
-//     //   fit: BoxFit.contain,
-//     //   width: double.infinity,
-//     //   errorBuilder: (context, error, stackTrace) {
-//     //     debugPrint("Vault error: INFO: $error");
-//     //     return const Center(
-//     //       child: CircularProgressIndicator(),
-//     //     );
-//     //   },
-//     // );
-//   }
-
-//   // Widget _buildImagePage() {
-//   //   return PhotoViewGallery.builder(
-//   //     // gaplessPlayback: true,
-//   //     scrollPhysics: (Platform.isFuchsia ||
-//   //             Platform.isLinux ||
-//   //             Platform.isWindows ||
-//   //             Platform.isMacOS)
-//   //         ? const ScrollPhysics()
-//   //         : const BouncingScrollPhysics(),
-//   //     gaplessPlayback: true,
-
-//   //     builder: (BuildContext context, int index) {
-//   //       return PhotoViewGalleryPageOptions.customChild(
-//   //         // child: FutureBuilder<Widget>(
-//   //         //   // initialData: Image.memory(
-//   //         //   //   ref.read(ImageCacheProvider).cachedThumbImage[
-//   //         //   //       "${widget.url}/${imageValue?[index].keys.toList().first}"]!,
-//   //         //   // ),
-//   //         //   initialData: Container(
-//   //         //       color: const Color.fromARGB(255, 255, 0, 0),
-//   //         //       child: const CircularProgressIndicator()),
-//   //         //   future: chainedAsyncOperations(index),
-//   //         //   builder: (context, snapshot) {
-//   //         //     print(context);
-//   //         //     // if (snapshot.hasData) {
-//   //         //     return snapshot.data!;
-//   //         //     // }
-//   //         //     // return snapshot.requireData;
-//   //         //   },
-//   //         // ),
-//   //         child: Image.memory(
-//   //           // (ref.read(ImageCacheProvider).cachedThumbImage[
-//   //           //         "${widget.url}/${imageValue?[index].keys.toList().first}"] ??
-//   //           //     finalImage)!,
-//   //           (thumbImage ?? finalImage)!,
-//   //           fit: BoxFit.contain,
-//   //           // finalImage!,
-//   //           gaplessPlayback: true,
-//   //         ),
-//   //         initialScale: PhotoViewComputedScale.contained,
-//   //         minScale: PhotoViewComputedScale.contained,
-//   //         heroAttributes: PhotoViewHeroAttributes(tag: index),
-//   //       );
-//   //     },
-//   //     itemCount: widget.count,
-
-//   //     // loadingBuilder: (context, event) => Center(
-//   //     //   child: Container(
-//   //     //     width: 20.0,
-//   //     //     height: 20.0,
-//   //     //     color: const Color.fromARGB(255, 255, 0, 0),
-//   //     //     child: const CircularProgressIndicator(),
-//   //     //   ),
-//   //     // ),
-//   //     // backgroundDecoration: widget.backgroundDecoration,
-//   //     pageController: pageController,
-//   //     // pageController: PageController(initialPage: 5),
-//   //     // onPageChanged: onPageChanged,
-//   //   );
-//   // }
-
-//   Widget _buildImagePage() {
-//     return Hero(
-//       tag: widget.index,
-//       child: PhotoViewGallery.builder(
-//         itemCount: widget.count,
-//         pageController: pageController,
-//         gaplessPlayback: true,
-//         loadingBuilder: (context, event) => Center(
-//           // child: Container(
-//           //   width: 20.0,
-//           //   height: 20.0,
-//           //   color: const Color.fromARGB(255, 255, 0, 0),
-//           //   child: const CircularProgressIndicator(),
-//           // ),
-//           child: Image.memory(thumbImage!),
-//         ),
-//         builder: (BuildContext context, int index) {
-//           return PhotoViewGalleryPageOptions(
-//             imageProvider: Image.memory(
-//               // (ref.read(ImageCacheProvider).cachedThumbImage[
-//               //         "${widget.url}/${imageValue?[index].keys.toList().first}"] ??
-//               //     finalImage)!,
-//               (thumbImage ?? finalImage)!,
-//               // finalImage!,
-//               gaplessPlayback: true,
-//             ).image,
-//             initialScale: PhotoViewComputedScale.contained,
-//             minScale: PhotoViewComputedScale.contained,
-//             // heroAttributes: PhotoViewHeroAttributes(tag: index),
-//           );
-//         },
-//       ),
-//     );
-//   }
 class _PhotoViewState extends ConsumerState<PhotoView>
     with fileapi.FileApiWrapper {
   late final PageController pageController;
@@ -191,56 +34,50 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   void initState() {
     super.initState();
     pageController = PageController(initialPage: widget.index);
-    thumbLoad(widget.index).then((_) => chainedAsyncOperations(widget.index));
   }
 
-  Future<int> thumbLoad(index) async {
-    await getImagesWrapper(widget.url).then((value) {
-      imageValue ??= sortMapToList(value);
-    });
+  Future<Widget> chainedAsyncOperations(index) async {
+    final results = await Future.wait([
+      getFileThumbWrapper(
+          "${widget.url}/${imageValue?[index].keys.toList().first}", ref),
+      getImagesWrapper(widget.url)
+    ]);
 
-    setState(() {
-      thumbImage = ref.read(ImageCacheProvider).cachedThumbImage[
-          "${widget.url}/${imageValue?[index].keys.toList().first}"];
-    });
-    return 1;
-  }
+    thumbImage = results[0] as Uint8List;
+    imageValue ??= sortMapToList(results[1] as Map<String, (String, double)>);
 
-  void chainedAsyncOperations(index) async {
     Uint8List imageData = await getFileWrapper(
         "${widget.url}/${imageValue?[index].keys.toList().first}", ref);
-    setState(() {
-      finalImage = imageData;
-      thumbImage = null;
-    });
+
+    return Image.memory(
+      Uint8List.fromList(imageData),
+      fit: BoxFit.contain,
+      width: double.infinity,
+    );
   }
 
   Widget _buildImagePage() {
-    return Hero(
-      tag: widget.index,
-      child: PhotoViewGallery.builder(
-        itemCount: widget.count,
-        pageController: pageController,
-        gaplessPlayback: true,
-        onPageChanged: (index) {
-          thumbLoad(index).then((_) => chainedAsyncOperations(index));
-        },
-        // loadingBuilder: (context, event) => Center(
-        //   child: thumbImage != null
-        //       ? Image.memory(thumbImage!)
-        //       : const CircularProgressIndicator(),
-        // ),
-        builder: (BuildContext context, int index) {
-          return PhotoViewGalleryPageOptions(
-            imageProvider: Image.memory(
-              (thumbImage ?? finalImage)!,
-              gaplessPlayback: true,
-            ).image,
-            initialScale: PhotoViewComputedScale.contained,
-            minScale: PhotoViewComputedScale.contained,
-          );
-        },
-      ),
+    return PhotoViewGallery.builder(
+      scrollPhysics: (Platform.isFuchsia ||
+              Platform.isLinux ||
+              Platform.isWindows ||
+              Platform.isMacOS)
+          ? const ScrollPhysics()
+          : const BouncingScrollPhysics(),
+      gaplessPlayback: true,
+      builder: (BuildContext context, int index) {
+        return PhotoViewGalleryPageOptions.customChild(
+          child: ImageLoader(
+            index: widget.index,
+            future: chainedAsyncOperations(widget.index),
+          ),
+          initialScale: PhotoViewComputedScale.contained,
+          minScale: PhotoViewComputedScale.contained,
+          // heroAttributes: PhotoViewHeroAttributes(tag: index),
+        );
+      },
+      itemCount: widget.count,
+      pageController: pageController,
     );
   }
 
@@ -263,87 +100,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
         forceMaterialTransparency: true,
       ),
       body: Stack(children: [
-        // PhotoViewGallery.builder(
-        //   gaplessPlayback: true,
-        //   scrollPhysics: (Platform.isFuchsia ||
-        //           Platform.isLinux ||
-        //           Platform.isWindows ||
-        //           Platform.isMacOS)
-        //       ? const ScrollPhysics()
-        //       : const BouncingScrollPhysics(),
-
-        //   builder: (BuildContext context, int index) {
-        //     return PhotoViewGalleryPageOptions.customChild(
-        //       child: FutureBuilder<Widget>(
-        //         future: chainedAsyncOperations(index),
-        //         builder: (context, snapshot) {
-        //           Widget child;
-        //           print("object");
-        //           if (snapshot.hasData) {
-        //             child = snapshot.data!;
-        //           } else {z
-        //             child = Stack(
-        //               children: [
-        //                 imageValue == null
-        //                     ? const SizedBox()
-        //                     : Center(
-        //                         child: AspectRatio(
-        //                           aspectRatio: imageValue![index]
-        //                               .values
-        //                               .toList()
-        //                               .last
-        //                               .$2,
-        //                           child: BlurHash(
-        //                               hash: imageValue![index]
-        //                                   .values
-        //                                   .toList()
-        //                                   .last
-        //                                   .$1),
-        //                         ),
-        //                       ),
-        //                 const Center(
-        //                     child: CircularProgressIndicator(
-        //                   color: Color.fromARGB(50, 255, 255, 255),
-        //                 )),
-        //               ],
-        //             );
-        //           }
-
-        //           return Center(
-        //             child: AnimatedSwitcher(
-        //               transitionBuilder:
-        //                   (Widget child, Animation<double> animation) {
-        //                 return FadeTransition(
-        //                   opacity: animation,
-        //                   child: child,
-        //                 );
-        //               },
-        //               duration: const Duration(milliseconds: 200),
-        //               child: child,
-        //             ),
-        //           );
-        //         },
-        //       ),
-        //       initialScale: PhotoViewComputedScale.contained,
-        //       minScale: PhotoViewComputedScale.contained,
-        //       heroAttributes: PhotoViewHeroAttributes(tag: index),
-        //     );
-        //   },
-        //   itemCount: widget.count,
-
-        //   loadingBuilder: (context, event) => Center(
-        //     child: Container(
-        //       width: 20.0,
-        //       height: 20.0,
-        //       color: const Color.fromARGB(255, 14, 14, 14),
-        //       child: const CircularProgressIndicator(),
-        //     ),
-        //   ),
-        //   // backgroundDecoration: widget.backgroundDecoration,
-        //   pageController: pageController,
-        //   // pageController: PageController(initialPage: 5),
-        //   // onPageChanged: onPageChanged,
-        // ),
         _buildImagePage(),
         if (Platform.isFuchsia ||
             Platform.isLinux ||
@@ -390,6 +146,38 @@ class _PhotoViewState extends ConsumerState<PhotoView>
             ),
           ),
       ]),
+    );
+  }
+}
+
+class ImageLoader extends StatefulWidget {
+  final int index;
+  final Future<Widget> future;
+
+  const ImageLoader({required this.index, required this.future, super.key});
+
+  @override
+  _ImageLoaderState createState() => _ImageLoaderState();
+}
+
+class _ImageLoaderState extends State<ImageLoader> {
+  late Future<Widget> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.future;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Widget>(
+      key: const ValueKey("stable-future-builder"),
+      future: _future,
+      initialData: const Center(child: CircularProgressIndicator()),
+      builder: (context, snapshot) {
+        return snapshot.data!;
+      },
     );
   }
 }
