@@ -136,9 +136,11 @@ ThemeData darkTheme = ThemeData(
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
   ),
-  dialogTheme: DialogTheme(
-    backgroundColor: colorScheme.surfaceContainerHighest,
-  ),
+  // dialogTheme: DialogTheme(
+  //   backgroundColor: colorScheme.surfaceContainerHighest,
+  // ),
+  dialogTheme:
+      DialogThemeData(backgroundColor: colorScheme.surfaceContainerHighest),
   switchTheme: SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.selected)) {

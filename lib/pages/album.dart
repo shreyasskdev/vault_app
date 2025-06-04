@@ -1,14 +1,11 @@
 import 'dart:ui';
-// import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-// import 'package:vault/utils/filename.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -135,8 +132,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       if (index < files.length) {
         final fileName = files[index].keys.first;
         final filePath = "$photoDirectoryPath/$fileName";
-        // await deleteFileWrapper(filePath);
-        print(filePath);
+        await deleteFileWrapper(filePath);
+        // print(filePath);
       }
     }
 

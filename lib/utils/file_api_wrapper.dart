@@ -13,6 +13,14 @@ mixin FileApiWrapper {
     }
   }
 
+  Future<void> deleteDirWrapper(dir) async {
+    try {
+      await file_api.deleteDir(dir: dir);
+    } catch (e) {
+      debugPrint('Vault error: WARN: $e');
+    }
+  }
+
   Future<List<String>> getDirsWrapper(path) async {
     try {
       return file_api.getDirs(dir: path);
@@ -73,6 +81,12 @@ mixin FileApiWrapper {
           imageData: data,
           dir: path,
         )
+        .catchError((e) => debugPrint("Vault error: WARN: $e"));
+  }
+
+  Future<void> deleteFileWrapper(path) async {
+    return await file_api
+        .deleteFile(path: path)
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 

@@ -1,31 +1,19 @@
-
 // file manipulation
 use std::{
-    collections::HashMap, 
-    fs::{
-        self, 
-        File
-    }, 
-    io::{
-        self, 
-        BufReader, 
-        Read, 
-        Write
-    }, 
+    collections::HashMap,
+    fs::{self, remove_dir_all, remove_file, File},
+    io::{self, BufReader, Read, Write},
     path::Path,
 };
-
-
 
 // Custom error
 use crate::utils::error::VaultError;
 // Encrytion
-use crate::utils::encryption::{set_crypto_params, encrypt_data, decrypt_data};
+use crate::utils::encryption::{decrypt_data, encrypt_data, set_crypto_params};
 // Caching
 use crate::utils::cache::cache_image;
 // Utils
 use crate::utils::utils::generate_unique_filename;
-
 
 pub fn set_password(password: &str) -> Result<bool, VaultError> {
     Ok(set_crypto_params(password)?)
@@ -36,8 +24,7 @@ pub fn create_dir(dir: String, album_name: String) -> Result<(), VaultError> {
         Ok(_) => Ok(()),
         Err(e) => {
             if e.kind() == io::ErrorKind::NotFound {
-                fs::create_dir_all(dir.clone())
-                    .map_err(|e| VaultError::Error(e.to_string()))?;
+                fs::create_dir_all(dir.clone()).map_err(|e| VaultError::Error(e.to_string()))?;
                 fs::create_dir(dir + "/" + &album_name)
                     .map_err(|e| VaultError::Error(e.to_string()))?;
                 Ok(())
@@ -45,6 +32,13 @@ pub fn create_dir(dir: String, album_name: String) -> Result<(), VaultError> {
                 Err(VaultError::Error(e.to_string()))
             }
         }
+    }
+}
+
+pub fn delete_dir(dir: &str) -> Result<(), VaultError> {
+    match remove_dir_all(&dir) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(VaultError::Error(e.to_string())),
     }
 }
 
@@ -58,7 +52,7 @@ pub fn get_dirs(dir: String) -> Result<Vec<String>, VaultError> {
                         if entry.path().is_dir() {
                             directories.push(entry.file_name().to_string_lossy().to_string());
                         };
-                    },
+                    }
                     Err(e) => return Err(VaultError::Error(e.to_string())),
                 }
             }
@@ -81,7 +75,7 @@ pub fn get_images(dir: String) -> Result<HashMap<String, (String, f32)>, VaultEr
                         if entry.path().is_file() {
                             let value = entry.file_name().to_string_lossy().to_string();
                             let file_path = Path::new(&dir).join(".hash").join(&value);
-        
+
                             let buffer = fs::read(&file_path)
                                 .map_err(|e| VaultError::Error(e.to_string()))?;
                             let contents = String::from_utf8(decrypt_data(&buffer)?)
@@ -94,7 +88,6 @@ pub fn get_images(dir: String) -> Result<HashMap<String, (String, f32)>, VaultEr
                             let hash = contents[0].clone();
 
                             files.insert(value, (hash, aspect_ratio));
-                            
                         };
                     }
                     Err(e) => return Err(VaultError::Error(e.to_string())),
@@ -108,21 +101,24 @@ pub fn get_images(dir: String) -> Result<HashMap<String, (String, f32)>, VaultEr
 
 pub fn get_album_thumb(dir: &str) -> Result<Option<HashMap<String, (String, f32)>>, VaultError> {
     let images = get_images(dir.to_owned())?;
-    let smallest_entry = images.iter()
-        .min_by_key(|entry| entry.0.clone());
+    let smallest_entry = images.iter().min_by_key(|entry| entry.0.clone());
 
     match smallest_entry {
         Some((key, value)) => {
             let mut map = HashMap::new();
             map.insert(key.clone(), value.clone());
             Ok(Some(map))
-        },
+        }
         None => Ok(None),
     }
 }
 
 pub fn get_file_thumb(path: &str) -> Result<Vec<u8>, VaultError> {
-    let mut files_list = path.to_string().split("/").map(|s| s.to_string()).collect::<Vec<String>>();
+    let mut files_list = path
+        .to_string()
+        .split("/")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
     // let filename = files_list.pop().unwrap();
     match files_list.pop() {
         Some(filename) => {
@@ -133,19 +129,16 @@ pub fn get_file_thumb(path: &str) -> Result<Vec<u8>, VaultError> {
                     let mut reader = BufReader::new(file);
                     let mut buffer = Vec::new();
                     match reader.read_to_end(&mut buffer) {
-                        Ok(_) => {
-                            Ok(decrypt_data(&buffer)?)
-                        },
+                        Ok(_) => Ok(decrypt_data(&buffer)?),
                         Err(e) => Err(VaultError::Error(e.to_string())),
                     }
                 }
                 Err(e) => Err(VaultError::Error(e.to_string())),
             }
-        },
+        }
         None => Err(VaultError::Error("Invalid path".to_string())),
     }
 }
-
 
 pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
     match File::open(path) {
@@ -153,9 +146,7 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
             let mut reader = BufReader::new(file);
             let mut buffer = Vec::new();
             match reader.read_to_end(&mut buffer) {
-                Ok(_) => {
-                    Ok(decrypt_data(&buffer)?)
-                },
+                Ok(_) => Ok(decrypt_data(&buffer)?),
                 Err(e) => Err(VaultError::Error(e.to_string())),
             }
         }
@@ -164,18 +155,28 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
 }
 
 pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
-
     let path = Path::new(&dir).join(generate_unique_filename(&dir));
 
-    cache_image(&image_data, path.as_os_str().to_string_lossy().to_string(), 2, 2)?;
+    cache_image(
+        &image_data,
+        path.as_os_str().to_string_lossy().to_string(),
+        2,
+        2,
+    )?;
     let encrypted_data = encrypt_data(&image_data)?;
-
 
     match File::create(&path) {
         Ok(mut file) => match file.write_all(&encrypted_data) {
             Ok(_) => Ok(()),
             Err(e) => Err(VaultError::Error(e.to_string())),
         },
+        Err(e) => Err(VaultError::Error(e.to_string())),
+    }
+}
+
+pub fn delete_file(path: &str) -> Result<(), VaultError> {
+    match remove_file(&path) {
+        Ok(_) => Ok(()),
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
 }

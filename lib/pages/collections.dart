@@ -303,8 +303,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       for (final index in sortedIndices) {
         if (directories != null && index < directories!.length) {
           final dirPath = "$appDirectoryPath/${directories![index]}";
-          // await deleteDirWrapper(dirPath);
-          print(dirPath);
+          await deleteDirWrapper(dirPath);
         }
       }
 

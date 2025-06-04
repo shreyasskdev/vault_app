@@ -54,7 +54,7 @@ dependencies:
 
   rust_lib_vault:
     path: rust_builder
-  flutter_rust_bridge: 2.7.0
+  flutter_rust_bridge: 2.10.0
   freezed_annotation: ^2.4.4
 
 dev_dependencies:
