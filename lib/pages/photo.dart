@@ -34,20 +34,39 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   void initState() {
     super.initState();
     pageController = PageController(initialPage: widget.index);
+    // Pre-load the image list
+    _loadImageList();
   }
 
-  Future<Widget> chainedAsyncOperations(index) async {
+  Future<void> _loadImageList() async {
+    if (imageValue == null) {
+      final images = await getImagesWrapper(widget.url);
+      setState(() {
+        imageValue = sortMapToList(images as Map<String, (String, double)>);
+      });
+    }
+  }
+
+  Future<Widget> chainedAsyncOperations(int index) async {
+    // Ensure imageValue is loaded first
+    if (imageValue == null) {
+      final images = await getImagesWrapper(widget.url);
+      imageValue = sortMapToList(images as Map<String, (String, double)>);
+    }
+
+    // Get the image key for the specific index
+    final imageKey = imageValue?[index].keys.toList().first;
+    if (imageKey == null) {
+      return const Center(child: Text('Image not found'));
+    }
+
     final results = await Future.wait([
-      getFileThumbWrapper(
-          "${widget.url}/${imageValue?[index].keys.toList().first}", ref),
-      getImagesWrapper(widget.url)
+      getFileThumbWrapper("${widget.url}/$imageKey", ref),
+      getFileWrapper("${widget.url}/$imageKey", ref),
     ]);
 
     thumbImage = results[0] as Uint8List;
-    imageValue ??= sortMapToList(results[1] as Map<String, (String, double)>);
-
-    Uint8List imageData = await getFileWrapper(
-        "${widget.url}/${imageValue?[index].keys.toList().first}", ref);
+    final imageData = results[1] as Uint8List;
 
     return Image.memory(
       Uint8List.fromList(imageData),
@@ -68,12 +87,12 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       builder: (BuildContext context, int index) {
         return PhotoViewGalleryPageOptions.customChild(
           child: ImageLoader(
-            index: widget.index,
-            future: chainedAsyncOperations(widget.index),
+            index: index, // Use the gallery index, not widget.index
+            future: chainedAsyncOperations(index), // Use the gallery index
           ),
           initialScale: PhotoViewComputedScale.contained,
           minScale: PhotoViewComputedScale.contained,
-          // heroAttributes: PhotoViewHeroAttributes(tag: index),
+          heroAttributes: PhotoViewHeroAttributes(tag: index),
         );
       },
       itemCount: widget.count,
@@ -170,12 +189,24 @@ class _ImageLoaderState extends State<ImageLoader> {
   }
 
   @override
+  void didUpdateWidget(ImageLoader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update future if index changes
+    if (oldWidget.index != widget.index) {
+      _future = widget.future;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<Widget>(
-      key: const ValueKey("stable-future-builder"),
+      key: ValueKey("future-builder-${widget.index}"), // Use index-specific key
       future: _future,
       initialData: const Center(child: CircularProgressIndicator()),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
         return snapshot.data!;
       },
     );
