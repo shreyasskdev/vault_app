@@ -28,9 +28,9 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     Directory? appDownloadDir = await getDownloadsDirectory();
     String rootDirectory = '${appDocDir.path}/Collections';
-    String downloadPath = '${appDownloadDir?.path}/Collections.zip';
+    String downloadPath = '${appDownloadDir?.path}/vault_backup.zip';
 
-    await zipBackupWrapper(rootDirectory, downloadPath);
+    await zipBackupWrapper(rootDirectory, downloadPath, true);
 
     final snackBar = SnackBar(
         content:

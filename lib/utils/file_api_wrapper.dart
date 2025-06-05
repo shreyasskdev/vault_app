@@ -100,9 +100,9 @@ mixin FileApiWrapper {
     });
   }
 
-  Future<void> zipBackupWrapper(rootDir, savePath) async {
+  Future<void> zipBackupWrapper(rootDir, savePath, bool encryption) async {
     return await file_api
-        .zipBackup(rootDir: rootDir, savePath: savePath)
+        .zipBackup(rootDir: rootDir, savePath: savePath, encryption: encryption)
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 

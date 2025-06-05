@@ -401,10 +401,15 @@ fn wire__crate__api__file__zip_backup_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_root_dir = <String>::sse_decode(&mut deserializer);
             let api_save_path = <String>::sse_decode(&mut deserializer);
+            let api_encryption = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, crate::utils::error::VaultError>((move || {
-                    let output_ok = crate::api::file::zip_backup(&api_root_dir, &api_save_path)?;
+                    let output_ok = crate::api::file::zip_backup(
+                        &api_root_dir,
+                        &api_save_path,
+                        api_encryption,
+                    )?;
                     Ok(output_ok)
                 })())
             }

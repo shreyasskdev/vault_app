@@ -103,7 +103,9 @@ abstract class RustLibApi extends BaseApi {
   Future<bool> crateApiFileSetPassword({required String password});
 
   Future<void> crateApiFileZipBackup(
-      {required String rootDir, required String savePath});
+      {required String rootDir,
+      required String savePath,
+      required bool encryption});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -362,12 +364,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @override
   Future<void> crateApiFileZipBackup(
-      {required String rootDir, required String savePath}) {
+      {required String rootDir,
+      required String savePath,
+      required bool encryption}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(rootDir, serializer);
         sse_encode_String(savePath, serializer);
+        sse_encode_bool(encryption, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 11, port: port_);
       },
@@ -376,14 +381,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeErrorData: sse_decode_vault_error,
       ),
       constMeta: kCrateApiFileZipBackupConstMeta,
-      argValues: [rootDir, savePath],
+      argValues: [rootDir, savePath, encryption],
       apiImpl: this,
     ));
   }
 
   TaskConstMeta get kCrateApiFileZipBackupConstMeta => const TaskConstMeta(
         debugName: "zip_backup",
-        argNames: ["rootDir", "savePath"],
+        argNames: ["rootDir", "savePath", "encryption"],
       );
 
   @protected
