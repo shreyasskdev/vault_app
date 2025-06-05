@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.10.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1764386769;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -368459335;
 
 // Section: executor
 
@@ -377,6 +377,40 @@ fn wire__crate__api__file__set_password_impl(
         },
     )
 }
+fn wire__crate__api__file__zip_backup_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "zip_backup",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_root_dir = <String>::sse_decode(&mut deserializer);
+            let api_save_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::utils::error::VaultError>((move || {
+                    let output_ok = crate::api::file::zip_backup(&api_root_dir, &api_save_path)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -531,6 +565,7 @@ fn pde_ffi_dispatcher_primary_impl(
         8 => wire__crate__api__file__get_images_impl(port, ptr, rust_vec_len, data_len),
         9 => wire__crate__api__file__save_file_impl(port, ptr, rust_vec_len, data_len),
         10 => wire__crate__api__file__set_password_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__file__zip_backup_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

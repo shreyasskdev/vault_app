@@ -36,3 +36,7 @@ Future<void> saveFile({required List<int> imageData, required String dir}) =>
 
 Future<void> deleteFile({required String path}) =>
     RustLib.instance.api.crateApiFileDeleteFile(path: path);
+
+Future<void> zipBackup({required String rootDir, required String savePath}) =>
+    RustLib.instance.api
+        .crateApiFileZipBackup(rootDir: rootDir, savePath: savePath);

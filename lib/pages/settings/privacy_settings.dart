@@ -1,9 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class PrivacySettings extends ConsumerStatefulWidget {
   const PrivacySettings({super.key});
@@ -12,9 +17,26 @@ class PrivacySettings extends ConsumerStatefulWidget {
   ConsumerState<PrivacySettings> createState() => _PrivacySettingsState();
 }
 
-class _PrivacySettingsState extends ConsumerState<PrivacySettings> {
+class _PrivacySettingsState extends ConsumerState<PrivacySettings>
+    with fileapi.FileApiWrapper {
   static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
+
+  Future backupAll() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    Directory? appDownloadDir = await getDownloadsDirectory();
+    String rootDirectory = '${appDocDir.path}/Collections';
+    String downloadPath = '${appDownloadDir?.path}/Collections.zip';
+
+    await zipBackupWrapper(rootDirectory, downloadPath);
+
+    final snackBar = SnackBar(
+        content:
+            Text('A backup zip file is sucessfully saved to $downloadPath'));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +98,9 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings> {
                     icon: CupertinoIcons.info,
                     // icon: Icons.info,
                     iconColor: theme.colorScheme.primary,
-                    title: "About",
+                    title: "Backup",
                     subtitle: "Learn more about this app",
-                    onTap: () => {},
+                    onTap: backupAll,
                     divider: false,
                   ),
                 ],

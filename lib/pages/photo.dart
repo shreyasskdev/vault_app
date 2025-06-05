@@ -42,7 +42,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     if (imageValue == null) {
       final images = await getImagesWrapper(widget.url);
       setState(() {
-        imageValue = sortMapToList(images as Map<String, (String, double)>);
+        imageValue = sortMapToList(images);
       });
     }
   }
@@ -51,7 +51,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     // Ensure imageValue is loaded first
     if (imageValue == null) {
       final images = await getImagesWrapper(widget.url);
-      imageValue = sortMapToList(images as Map<String, (String, double)>);
+      imageValue = sortMapToList(images);
     }
 
     // Get the image key for the specific index
@@ -65,8 +65,8 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       getFileWrapper("${widget.url}/$imageKey", ref),
     ]);
 
-    thumbImage = results[0] as Uint8List;
-    final imageData = results[1] as Uint8List;
+    thumbImage = results[0];
+    final imageData = results[1];
 
     return Image.memory(
       Uint8List.fromList(imageData),

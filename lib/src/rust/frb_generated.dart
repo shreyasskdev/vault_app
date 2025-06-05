@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.10.0';
 
   @override
-  int get rustContentHash => 1764386769;
+  int get rustContentHash => -368459335;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -101,6 +101,9 @@ abstract class RustLibApi extends BaseApi {
       {required List<int> imageData, required String dir});
 
   Future<bool> crateApiFileSetPassword({required String password});
+
+  Future<void> crateApiFileZipBackup(
+      {required String rootDir, required String savePath});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -355,6 +358,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiFileSetPasswordConstMeta => const TaskConstMeta(
         debugName: "set_password",
         argNames: ["password"],
+      );
+
+  @override
+  Future<void> crateApiFileZipBackup(
+      {required String rootDir, required String savePath}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(rootDir, serializer);
+        sse_encode_String(savePath, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 11, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: sse_decode_vault_error,
+      ),
+      constMeta: kCrateApiFileZipBackupConstMeta,
+      argValues: [rootDir, savePath],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiFileZipBackupConstMeta => const TaskConstMeta(
+        debugName: "zip_backup",
+        argNames: ["rootDir", "savePath"],
       );
 
   @protected

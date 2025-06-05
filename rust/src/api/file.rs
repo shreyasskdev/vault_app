@@ -2,9 +2,12 @@
 use std::{
     collections::HashMap,
     fs::{self, remove_dir_all, remove_file, File},
-    io::{self, BufReader, Read, Write},
+    io::{self, BufReader, Cursor, Read, Write},
     path::Path,
 };
+
+use walkdir::WalkDir;
+use zip::{write::FileOptions, ZipWriter};
 
 // Custom error
 use crate::utils::error::VaultError;
@@ -177,6 +180,40 @@ pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
 pub fn delete_file(path: &str) -> Result<(), VaultError> {
     match remove_file(&path) {
         Ok(_) => Ok(()),
+        Err(e) => Err(VaultError::Error(e.to_string())),
+    }
+}
+
+pub fn zip_backup(root_dir: &str, save_path: &str) -> Result<(), VaultError> {
+    let mut buffer = Cursor::new(Vec::new());
+    let mut zip = ZipWriter::new(&mut buffer);
+    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let src_path = Path::new(root_dir);
+
+    for entry in WalkDir::new(src_path) {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        let name = path.strip_prefix(src_path).unwrap();
+
+        if path.is_file() {
+            zip.start_file(name.to_string_lossy(), options)
+                .map_err(|e| VaultError::Error(e.to_string()))?;
+
+            let decrypted_data = get_file(path.to_str().unwrap())?;
+            zip.write_all(&decrypted_data)
+                .map_err(|e| VaultError::Error(format!("{:?}", e)))?;
+        } else if !name.as_os_str().is_empty() {
+            zip.add_directory(name.to_string_lossy(), options)
+                .map_err(|e| VaultError::Error(e.to_string()))?;
+        }
+    }
+
+    drop(zip);
+
+    match File::create(save_path) {
+        Ok(mut file) => file
+            .write_all(&buffer.into_inner())
+            .map_err(|e| VaultError::Error(e.to_string())),
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
 }

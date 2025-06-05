@@ -100,6 +100,12 @@ mixin FileApiWrapper {
     });
   }
 
+  Future<void> zipBackupWrapper(rootDir, savePath) async {
+    return await file_api
+        .zipBackup(rootDir: rootDir, savePath: savePath)
+        .catchError((e) => debugPrint("Vault error: WARN: $e"));
+  }
+
   List<Map<String, (String, double)>> sortMapToList(
       Map<String, (String, double)> inputMap) {
     // Convert the map entries to a list and sort by keys
