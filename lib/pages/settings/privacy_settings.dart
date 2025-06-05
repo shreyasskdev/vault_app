@@ -23,6 +23,28 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
   static const double _borderRadius = 20.0;
 
   Future backupAll() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Backup type"),
+          content: const Text("Do you want to encrypt the backup?"),
+          actions: [
+            TextButton(
+              child: const Text("No"),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text("Yes"),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) return; // cancelled
+
     WidgetsFlutterBinding.ensureInitialized();
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -30,12 +52,15 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     String rootDirectory = '${appDocDir.path}/Collections';
     String downloadPath = '${appDownloadDir?.path}/vault_backup.zip';
 
-    await zipBackupWrapper(rootDirectory, downloadPath, true);
+    await zipBackupWrapper(rootDirectory, downloadPath, result);
 
     final snackBar = SnackBar(
-        content:
-            Text('A backup zip file is sucessfully saved to $downloadPath'));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      content: Text(
+          'Backup ${result ? "with encryption" : "without encryption"} saved to $downloadPath'),
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
   }
 
   @override
@@ -95,11 +120,11 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                 menuSpacing: _menuSpacing,
                 children: [
                   MenuItem(
-                    icon: CupertinoIcons.info,
+                    icon: CupertinoIcons.cloud_upload,
                     // icon: Icons.info,
                     iconColor: theme.colorScheme.primary,
                     title: "Backup",
-                    subtitle: "Learn more about this app",
+                    subtitle: "Backup all the contents encrypted or not",
                     onTap: backupAll,
                     divider: false,
                   ),
