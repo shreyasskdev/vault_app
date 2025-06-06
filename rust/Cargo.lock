@@ -1399,6 +1399,7 @@ dependencies = [
  "lazy_static",
  "pbkdf2 0.12.2",
  "rand",
+ "serde",
  "sha2",
  "walkdir",
  "zeroize",

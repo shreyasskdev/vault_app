@@ -33,6 +33,7 @@ chrono = "0.4.38"
 zip = "0.6"
 walkdir = "2.5"
 
+serde = "*"
 
 # wasm support
 getrandom = { version = "0.2", features = ["js"] }

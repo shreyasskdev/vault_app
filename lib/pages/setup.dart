@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
-class Password extends StatefulWidget {
-  const Password({super.key});
+class SetupPage extends StatefulWidget {
+  const SetupPage({super.key});
 
   @override
-  State<Password> createState() => _PasswordState();
+  State<SetupPage> createState() => _SetupPageState();
 }
 
-class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
+class _SetupPageState extends State<SetupPage> with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
   String? errorMessage;
 
@@ -22,7 +22,7 @@ class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
           else
             {
               setState(() {
-                errorMessage = "Wrong password";
+                errorMessage = "Failed to set password";
               })
             }
         });
@@ -39,7 +39,7 @@ class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  "Enter the password",
+                  "Set up your vault password",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -55,7 +55,7 @@ class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
                     setPassword();
                   },
                   decoration: const InputDecoration(
-                    hintText: "Password",
+                    hintText: "New password",
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -70,12 +70,6 @@ class _PasswordState extends State<Password> with fileapi.FileApiWrapper {
                       ),
                     ),
                   ),
-                // const SizedBox(
-                // height: 16), // Adds spacing between TextField and Button
-                // ElevatedButton(
-                // onPressed: setPassword,
-                // child: const Text("Submit"),
-                // ),
               ],
             ),
           ),

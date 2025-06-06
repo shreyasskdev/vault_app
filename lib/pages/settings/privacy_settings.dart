@@ -123,7 +123,7 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     icon: CupertinoIcons.cloud_upload,
                     // icon: Icons.info,
                     iconColor: theme.colorScheme.primary,
-                    title: "Backup",
+                    title: "Local Backup",
                     subtitle: "Backup all the contents encrypted or not",
                     onTap: backupAll,
                     divider: false,

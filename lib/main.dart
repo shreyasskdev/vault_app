@@ -10,6 +10,8 @@ import 'package:vault/pages/settings/privacy_settings.dart';
 import 'package:vault/pages/settings/settings.dart';
 import 'package:vault/providers.dart';
 import 'pages/collections.dart';
+import 'pages/setup.dart';
+import 'pages/intro.dart';
 import 'pages/album.dart';
 import 'package:go_router/go_router.dart';
 import 'themes/dark_theme.dart';
@@ -77,11 +79,29 @@ class _MyAppState extends ConsumerState<MyApp> {
 }
 
 final GoRouter _router = GoRouter(
+  initialLocation: '/',
+  redirect: (context, state) {
+    // some logic to decide if user should go to setup
+    final shouldSetup = false; // or check your config
+
+    if (state.matchedLocation == '/' && shouldSetup) {
+      return '/intro';
+    }
+    return null;
+  },
   routes: [
     GoRoute(
       path: "/",
       builder: (context, state) => const Password(),
       routes: [
+        GoRoute(
+          path: "intro",
+          builder: (context, state) => const IntroductionPage(),
+        ),
+        GoRoute(
+          path: "setup",
+          builder: (context, state) => const SetupPage(),
+        ),
         GoRoute(
             path: "settings",
             builder: (context, state) => const SettingsPage(),

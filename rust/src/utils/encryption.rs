@@ -22,13 +22,10 @@ const SALT_LEN: usize = 32;
 const KEY_LEN: usize = 32;
 const IV_LEN: usize = 16;
 
-
 const SALT: [u8; SALT_LEN] = [
     17, 128, 16, 104, 193, 198, 63, 155, 239, 14, 180, 237, 137, 144, 175, 49, 118, 108, 13, 147,
     174, 122, 195, 174, 176, 103, 104, 156, 151, 114, 101, 106,
 ];
-
-
 
 #[derive(Zeroize)]
 struct CryptoParams {
@@ -40,36 +37,31 @@ lazy_static! {
     static ref CRYPTO_PARAMS: RwLock<Option<CryptoParams>> = RwLock::new(None);
 }
 
-
 // ------ cryptography functions -------
 pub fn encrypt_data(data: &[u8]) -> Result<Vec<u8>, VaultError> {
     match get_crypto_params()? {
-        Some((key, iv)) => {
-            match Aes256Cbc::new_from_slices(&key, &iv) {
-                Ok(cipher) => {
-                    Ok(cipher.encrypt_vec(data))
-                },
-                Err(e) => Err(VaultError::Error(e.to_string())),
-            }
+        Some((key, iv)) => match Aes256Cbc::new_from_slices(&key, &iv) {
+            Ok(cipher) => Ok(cipher.encrypt_vec(data)),
+            Err(e) => Err(VaultError::Error(e.to_string())),
         },
-        None => Err(VaultError::Error("Could not get key (empty or none)".to_string())),
+        None => Err(VaultError::Error(
+            "Could not get key (empty or none)".to_string(),
+        )),
     }
 }
 
 pub fn decrypt_data(encrypted_data: &[u8]) -> Result<Vec<u8>, VaultError> {
     match get_crypto_params()? {
-        Some((key, iv)) => {
-            match Aes256Cbc::new_from_slices(&key, &iv) {
-                Ok(cipher) => {
-                    match cipher.decrypt_vec(encrypted_data) {
-                        Ok(decrypted_data) => Ok(decrypted_data),
-                        Err(e) => Err(VaultError::Error(e.to_string())),
-                    }
-                },
+        Some((key, iv)) => match Aes256Cbc::new_from_slices(&key, &iv) {
+            Ok(cipher) => match cipher.decrypt_vec(encrypted_data) {
+                Ok(decrypted_data) => Ok(decrypted_data),
                 Err(e) => Err(VaultError::Error(e.to_string())),
-            }
+            },
+            Err(e) => Err(VaultError::Error(e.to_string())),
         },
-        None => Err(VaultError::Error("Could not get key (empty or none)".to_string())),
+        None => Err(VaultError::Error(
+            "Could not get key (empty or none)".to_string(),
+        )),
     }
 }
 
@@ -101,11 +93,9 @@ pub fn set_crypto_params(password: &str) -> Result<bool, VaultError> {
 
 fn get_crypto_params() -> Result<Option<([u8; KEY_LEN], [u8; IV_LEN])>, VaultError> {
     match CRYPTO_PARAMS.read() {
-        Ok(cryptoparams_option) => {
-            match cryptoparams_option.as_ref() {
-                Some(cryptoparams) => Ok(Some((cryptoparams.key.clone(), cryptoparams.iv.clone()))),
-                None => Ok(None),
-            }
+        Ok(cryptoparams_option) => match cryptoparams_option.as_ref() {
+            Some(cryptoparams) => Ok(Some((cryptoparams.key.clone(), cryptoparams.iv.clone()))),
+            None => Ok(None),
         },
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
