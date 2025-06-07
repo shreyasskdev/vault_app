@@ -29,7 +29,6 @@ class AboutPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // App Icon or Illustration
             Container(
               height: 120,
               width: 120,

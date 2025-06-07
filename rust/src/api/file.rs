@@ -12,14 +12,22 @@ use zip::{write::FileOptions, ZipWriter};
 // Custom error
 use crate::utils::error::VaultError;
 // Encrytion
-use crate::utils::encryption::{decrypt_data, encrypt_data, set_crypto_params};
+use crate::utils::encryption::{
+    check_password, check_validation_data_exists, decrypt_data, encrypt_data, save_validation_data,
+};
 // Caching
 use crate::utils::cache::cache_image;
 // Utils
 use crate::utils::utils::generate_unique_filename;
 
-pub fn set_password(password: &str) -> Result<bool, VaultError> {
-    Ok(set_crypto_params(password)?)
+pub fn set_password(password: &str, dir: &str) -> Result<bool, VaultError> {
+    Ok(check_password(password, dir)?)
+}
+pub fn save_password(password: &str, dir: &str) -> Result<(), VaultError> {
+    Ok(save_validation_data(dir, password)?)
+}
+pub fn check_password_exist(dir: &str) -> bool {
+    check_validation_data_exists(dir)
 }
 
 pub fn create_dir(dir: String, album_name: String) -> Result<(), VaultError> {

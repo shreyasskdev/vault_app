@@ -21,14 +21,13 @@ class AlbumPage extends ConsumerStatefulWidget {
 
 class _AlbumPageState extends ConsumerState<AlbumPage>
     with fileapi.FileApiWrapper {
-  // List<File> files = [];
   List<Map<String, (String, double)>> files = [];
   String photoDirectoryPath = "";
 
   bool _isSelectionMode = false;
   Set<int> _selectedIndices = {};
 
-  @override // stratup code
+  @override
   void initState() {
     super.initState();
     getImages();
@@ -133,7 +132,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
         final fileName = files[index].keys.first;
         final filePath = "$photoDirectoryPath/$fileName";
         await deleteFileWrapper(filePath);
-        // print(filePath);
       }
     }
 

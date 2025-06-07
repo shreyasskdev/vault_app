@@ -63,7 +63,6 @@ mixin FileApiWrapper {
   }
 
   Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
-    print("shiiii" + path);
     final imageCache = ref.read(ImageCacheProvider);
     final cachedImage = imageCache.cachedThumbImage[path];
 
@@ -90,9 +89,26 @@ mixin FileApiWrapper {
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 
-  Future<bool> setPasswordWrapper(password) async {
+  Future<bool> setPasswordWrapper(password, dir) async {
     return await file_api
-        .setPassword(password: password)
+        .setPassword(password: password, dir: dir)
+        .then((value) => value)
+        .catchError((e) {
+      debugPrint("Vault error: WARN: $e");
+      return false;
+    });
+  }
+
+  Future<void> savePasswordWrapper(password, dir) async {
+    await file_api
+        .savePassword(dir: dir, password: password)
+        .then((value) => {value})
+        .catchError((e) => {debugPrint("Vault error: WARN: $e")});
+  }
+
+  Future<bool> checkPasswordExistWrapper(dir) async {
+    return await file_api
+        .checkPasswordExist(dir: dir)
         .then((value) => value)
         .catchError((e) {
       debugPrint("Vault error: WARN: $e");

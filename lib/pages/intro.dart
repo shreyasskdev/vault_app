@@ -33,7 +33,7 @@ class _IntroductionPageState extends State<IntroductionPage> {
           duration: const Duration(milliseconds: 400),
           curve: Curves.fastEaseInToSlowEaseOut);
     } else {
-      context.go("/setup"); // Navigate to setup page after last slide
+      context.go("/setup");
     }
   }
 

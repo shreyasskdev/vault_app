@@ -7,8 +7,14 @@ import '../frb_generated.dart';
 import '../utils/error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-Future<bool> setPassword({required String password}) =>
-    RustLib.instance.api.crateApiFileSetPassword(password: password);
+Future<bool> setPassword({required String password, required String dir}) =>
+    RustLib.instance.api.crateApiFileSetPassword(password: password, dir: dir);
+
+Future<void> savePassword({required String password, required String dir}) =>
+    RustLib.instance.api.crateApiFileSavePassword(password: password, dir: dir);
+
+Future<bool> checkPasswordExist({required String dir}) =>
+    RustLib.instance.api.crateApiFileCheckPasswordExist(dir: dir);
 
 Future<void> createDir({required String dir, required String albumName}) =>
     RustLib.instance.api.crateApiFileCreateDir(dir: dir, albumName: albumName);

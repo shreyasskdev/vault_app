@@ -87,8 +87,8 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       builder: (BuildContext context, int index) {
         return PhotoViewGalleryPageOptions.customChild(
           child: ImageLoader(
-            index: index, // Use the gallery index, not widget.index
-            future: chainedAsyncOperations(index), // Use the gallery index
+            index: index,
+            future: chainedAsyncOperations(index),
           ),
           initialScale: PhotoViewComputedScale.contained,
           minScale: PhotoViewComputedScale.contained,

@@ -30,7 +30,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
   bool _isSelectionMode = false;
   Set<int> _selectedIndices = {};
 
-  @override // Code to run in startup
+  @override
   void initState() {
     super.initState();
     init();
@@ -78,8 +78,6 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       await getDirsAndAlbum();
     }
 
-    print("$imageValue :: $directories");
-
     if (imageValue![index] == null) {
       return Container(
         color: const Color.fromARGB(255, 14, 14, 14),
@@ -88,7 +86,6 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
         ),
       );
     }
-    print("THIS >> ${directories?[index]}/${imageValue![index]!.keys.first}");
     Uint8List imageData = await getFileThumbWrapper(
         "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}",
         ref);
@@ -174,8 +171,6 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                                   .colorScheme
                                   .surfaceContainerHighest,
                               borderRadius: const BorderRadius.all(Radius.zero),
-                              // padding: EdgeInsets.all(15),
-
                               onPressed: () {
                                 createNewAlbumDirectory();
                               },
