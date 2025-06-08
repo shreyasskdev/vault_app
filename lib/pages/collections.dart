@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/moiton_detector.dart';
+import 'package:vault/themes/dark_theme.dart';
 import 'package:vault/widget/touchable.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
@@ -128,6 +129,10 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: AlertDialog(
+            shape: const RoundedSuperellipseBorder(
+              borderRadius: BorderRadius.all(Radius.circular(30)),
+            ),
+            clipBehavior: Clip.antiAliasWithSaveLayer,
             contentPadding: const EdgeInsets.all(0),
             content: SizedBox(
               height: 150,
@@ -170,7 +175,8 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                               borderColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest,
-                              borderRadius: const BorderRadius.all(Radius.zero),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(20)),
                               onPressed: () {
                                 createNewAlbumDirectory();
                               },
@@ -195,7 +201,8 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                               borderColor: Theme.of(context)
                                   .colorScheme
                                   .surfaceContainerHighest,
-                              borderRadius: const BorderRadius.all(Radius.zero),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(20)),
                               onPressed: () => context.pop(),
                               child: const Text(
                                 "Cancel",
@@ -376,115 +383,108 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                       _toggleSelectionMode(index);
                     }
                   },
-                  child: Container(
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(30),
-                          child: Stack(
-                            children: [
-                              AspectRatio(
-                                aspectRatio: 1 / 1,
-                                child: FutureBuilder<Widget>(
-                                  future: chainedAsyncOperations(index),
-                                  builder: (context, snapshot) {
-                                    Widget child;
-                                    if (snapshot.hasData) {
-                                      child = SizedBox.expand(
-                                          child: snapshot.data!);
+                  child: Stack(
+                    children: [
+                      ClipRSuperellipse(
+                        borderRadius: BorderRadius.circular(30),
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: Stack(
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 1 / 1,
+                              child: FutureBuilder<Widget>(
+                                future: chainedAsyncOperations(index),
+                                builder: (context, snapshot) {
+                                  Widget child;
+                                  if (snapshot.hasData) {
+                                    child =
+                                        SizedBox.expand(child: snapshot.data!);
+                                  } else {
+                                    if (imageValue != null &&
+                                        imageValue![index] != null &&
+                                        imageValue![index]!.values.isNotEmpty) {
+                                      child = BlurHash(
+                                        hash:
+                                            imageValue![index]!.values.first.$1,
+                                      );
                                     } else {
-                                      if (imageValue != null &&
-                                          imageValue![index] != null &&
-                                          imageValue![index]!
-                                              .values
-                                              .isNotEmpty) {
-                                        child = BlurHash(
-                                          hash: imageValue![index]!
-                                              .values
-                                              .first
-                                              .$1,
-                                        );
-                                      } else {
-                                        child = const Text("Empty");
-                                      }
+                                      child = const Text("Empty");
                                     }
-                                    return AnimatedSwitcher(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      child: child,
-                                    );
-                                  },
+                                  }
+                                  return AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ),
+                            Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color.fromARGB(0, 0, 0, 0),
+                                    Color.fromARGB(200, 0, 0, 0)
+                                  ],
                                 ),
                               ),
-                              Container(
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Color.fromARGB(0, 0, 0, 0),
-                                      Color.fromARGB(200, 0, 0, 0)
-                                    ],
-                                  ),
-                                ),
-                                alignment: Alignment.bottomRight,
-                                padding:
-                                    const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                                child: Text(
-                                  directories![index].split("/").last,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.fade,
-                                  maxLines: 1,
-                                  softWrap: false,
-                                ),
+                              alignment: Alignment.bottomRight,
+                              padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                              child: Text(
+                                directories![index].split("/").last,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.fade,
+                                maxLines: 1,
+                                softWrap: false,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_isSelectionMode)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        if (_isSelectionMode)
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                      if (_isSelectionMode)
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Container(
+                            width: 24,
+                            height: 24,
                             decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.white.withOpacity(0.8),
                               border: Border.all(
                                 color: isSelected
-                                    ? Colors.white
-                                    : Colors.transparent,
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.grey.withOpacity(0.5),
                                 width: 2,
                               ),
-                              borderRadius: BorderRadius.circular(30),
                             ),
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check,
+                                    size: 16,
+                                    color: Colors.white,
+                                  )
+                                : null,
                           ),
-                        if (_isSelectionMode)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.white.withOpacity(0.8),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.grey.withOpacity(0.5),
-                                  width: 2,
-                                ),
-                              ),
-                              child: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 );
               },

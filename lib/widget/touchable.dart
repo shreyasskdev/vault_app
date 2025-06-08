@@ -45,9 +45,19 @@ class _TouchableButtonState extends State<TouchableButton> {
       onTapCancel: () => setState(() => isDown = false),
       onTap: () => widget.onPressed!(),
       child: Container(
-        decoration: BoxDecoration(
+        // decoration: BoxDecoration(
+        //   color: widget.highlightColor,
+        //   borderRadius: widget.borderRadius,
+        // ),
+        decoration: ShapeDecoration(
+          shape: RoundedSuperellipseBorder(
+            side: BorderSide(
+              color: widget.borderColor!,
+              width: widget.borderWidth!,
+            ),
+            borderRadius: widget.borderRadius ?? BorderRadius.zero,
+          ),
           color: widget.highlightColor,
-          borderRadius: widget.borderRadius,
         ),
         child: AnimatedOpacity(
           duration: widget.duration!,
