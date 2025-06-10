@@ -41,12 +41,12 @@ android {
     buildTypes {
         debug {
             // Debug version will be com.example.myapp.debug
-            applicationIdSuffix ".debug"
+            // applicationIdSuffix ".debug"
             resValue "string", "app_name", "Vault Debug"
         }
         profile {
             // Profile version will be com.example.myapp.profile
-            applicationIdSuffix ".profile"
+            // applicationIdSuffix ".profile"
             resValue "string", "app_name", "Vault Profile"
         }
 //        release {
