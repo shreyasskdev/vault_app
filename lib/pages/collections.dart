@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/moiton_detector.dart';
-import 'package:vault/themes/dark_theme.dart';
 import 'package:vault/widget/touchable.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;

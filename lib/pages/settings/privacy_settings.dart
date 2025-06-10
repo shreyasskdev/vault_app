@@ -48,9 +48,15 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     WidgetsFlutterBinding.ensureInitialized();
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
-    Directory? appDownloadDir = await getDownloadsDirectory();
     String rootDirectory = '${appDocDir.path}/Collections';
-    String downloadPath = '${appDownloadDir?.path}/vault_backup.zip';
+    String downloadPath;
+
+    if (Platform.isAndroid) {
+      downloadPath = '/storage/emulated/0/Download/vault_backup.zip';
+    } else {
+      Directory? appDownloadDir = await getDownloadsDirectory();
+      downloadPath = '${appDownloadDir?.path}/vault_backup.zip';
+    }
 
     await zipBackupWrapper(rootDirectory, downloadPath, result);
 
