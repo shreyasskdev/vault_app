@@ -39,21 +39,29 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String directory = '${appDocDir.path}/Collections';
 
-    final XFile? image =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    final List<XFile?> images =
+        // await ImagePicker().pickImage(source: ImageSource.gallery, );
+        await ImagePicker().pickMultiImage();
 
-    if (image == null) {
+    if (images.isEmpty) {
       debugPrint("No image selected");
       return;
     }
+    for (int i = 0; i < images.length; i++) {
+      try {
+        final XFile? image = images[i];
 
-    final bytes = await image.readAsBytes();
-    if (Platform.isAndroid) {
-      await File(image.path).delete(); // Delete cached file
+        final bytes = await image?.readAsBytes();
+        if (Platform.isAndroid) {
+          await File(image!.path).delete(); // Delete cached file
+        }
+        final Uint8List uint8list = Uint8List.fromList(bytes!);
+
+        saveFileWrapper(uint8list, '$directory/${widget.name}');
+      } catch (e) {
+        debugPrint("Error processing image $i: $e");
+      }
     }
-    final Uint8List uint8list = Uint8List.fromList(bytes);
-
-    saveFileWrapper(uint8list, '$directory/${widget.name}');
 
     getImages();
   }
@@ -162,19 +170,19 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                 style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
         elevation: 0,
-        backgroundColor: const Color.fromARGB(135, 0, 0, 0),
-        forceMaterialTransparency: true,
-        flexibleSpace: ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.compose(
-              outer: ImageFilter.blur(
-                  sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
-              inner: ImageFilter.blur(
-                  sigmaY: 40, sigmaX: 30, tileMode: TileMode.clamp),
-            ),
-            child: Container(color: Colors.transparent),
-          ),
-        ),
+        // backgroundColor: const Color.fromARGB(135, 0, 0, 0),
+        // forceMaterialTransparency: true,
+        // flexibleSpace: ClipRRect(
+        //   child: BackdropFilter(
+        //     filter: ImageFilter.compose(
+        //       outer: ImageFilter.blur(
+        //           sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
+        //       inner: ImageFilter.blur(
+        //           sigmaY: 40, sigmaX: 30, tileMode: TileMode.clamp),
+        //     ),
+        //     child: Container(color: Colors.transparent),
+        //   ),
+        // ),
         actions: <Widget>[
           if (_isSelectionMode)
             IconButton(
