@@ -37,6 +37,9 @@ Future<Uint8List> getFileThumb({required String path}) =>
 Future<Uint8List> getFile({required String path}) =>
     RustLib.instance.api.crateApiFileGetFile(path: path);
 
+Future<void> saveImage({required List<int> imageData, required String dir}) =>
+    RustLib.instance.api.crateApiFileSaveImage(imageData: imageData, dir: dir);
+
 Future<void> saveFile({required List<int> imageData, required String dir}) =>
     RustLib.instance.api.crateApiFileSaveFile(imageData: imageData, dir: dir);
 
@@ -49,3 +52,11 @@ Future<void> zipBackup(
         required bool encryption}) =>
     RustLib.instance.api.crateApiFileZipBackup(
         rootDir: rootDir, savePath: savePath, encryption: encryption);
+
+Future<void> restoreBackup(
+        {required String rootDir, required String zipPath, String? password}) =>
+    RustLib.instance.api.crateApiFileRestoreBackup(
+        rootDir: rootDir, zipPath: zipPath, password: password);
+
+Future<bool> checkZipEncrypted({required String zipPath}) =>
+    RustLib.instance.api.crateApiFileCheckZipEncrypted(zipPath: zipPath);

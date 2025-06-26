@@ -7,13 +7,14 @@ use std::{
 };
 
 use walkdir::WalkDir;
-use zip::{write::FileOptions, ZipWriter};
+use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
 // Custom error
 use crate::utils::error::VaultError;
 // Encrytion
 use crate::utils::encryption::{
     check_password, check_validation_data_exists, decrypt_data, encrypt_data, save_validation_data,
+    PasswordDecrypter,
 };
 // Caching
 use crate::utils::cache::cache_image;
@@ -165,7 +166,7 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
     }
 }
 
-pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
+pub fn save_image(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
     let path = Path::new(&dir).join(generate_unique_filename(&dir));
 
     cache_image(
@@ -174,6 +175,19 @@ pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
         2,
         2,
     )?;
+    let encrypted_data = encrypt_data(&image_data)?;
+
+    match File::create(&path) {
+        Ok(mut file) => match file.write_all(&encrypted_data) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(VaultError::Error(e.to_string())),
+        },
+        Err(e) => Err(VaultError::Error(e.to_string())),
+    }
+}
+
+pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
+    let path = Path::new(&dir).join(generate_unique_filename(&dir));
     let encrypted_data = encrypt_data(&image_data)?;
 
     match File::create(&path) {
@@ -259,4 +273,105 @@ pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(
             .map_err(|e| VaultError::Error(e.to_string())),
         Err(e) => Err(VaultError::Error(e.to_string())),
     }
+}
+
+pub fn restore_backup(
+    root_dir: &str,
+    zip_path: &str,
+    password: Option<String>,
+) -> Result<(), VaultError> {
+    const SKIP_PATTERNS: &[&str] = &[".hash", ".thumbs", ".vault-key"];
+
+    let zip = File::open(zip_path)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP file: {}", e)))?;
+    let reader = BufReader::new(zip);
+    let root_dir_path = Path::new(root_dir);
+
+    let mut archive = ZipArchive::new(reader)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP archive: {}", e)))?;
+    fs::create_dir_all(root_dir_path)
+        .map_err(|e| VaultError::Error(format!("Failed to create target directory: {}", e)))?;
+
+    let decrypter = password.as_deref().map(PasswordDecrypter::new);
+
+    for i in 0..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| VaultError::Error(format!("Failed to access file in archive: {}", e)))?;
+
+        let outpath = root_dir_path.join(file.name());
+
+        // Skip files with .cache .hash .vault-key
+        if SKIP_PATTERNS
+            .iter()
+            .any(|&pattern| file.name().contains(pattern))
+        {
+            continue;
+        }
+
+        if file.name().ends_with('/') {
+            // Its a directory
+            fs::create_dir_all(&outpath).map_err(|e| {
+                VaultError::Error(format!(
+                    "Failed to create directory {}: {}",
+                    outpath.display(),
+                    e
+                ))
+            })?;
+        } else {
+            // Its a file
+
+            // Creating parent directory if its not exists
+            if let Some(parent) = outpath.parent() {
+                fs::create_dir_all(parent).map_err(|e| {
+                    VaultError::Error(format!("Failed to create parent directory: {}", e))
+                })?;
+            }
+
+            // Get file data
+            let mut file_content = Vec::new();
+            file.read_to_end(&mut file_content).map_err(|e| {
+                VaultError::Error(format!("Failed to read file from archive: {}", e))
+            })?;
+
+            if let Some(ref decrypter) = decrypter {
+                let decrypted_data = decrypter.decrypt(&file_content)?;
+                if let Some(parent_dir) = outpath.parent() {
+                    save_image(decrypted_data, parent_dir.to_string_lossy().to_string())?;
+                }
+            } else {
+                if let Some(parent_dir) = outpath.parent() {
+                    save_image(file_content, parent_dir.to_string_lossy().to_string())?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub fn check_zip_encrypted(zip_path: &str) -> Result<bool, VaultError> {
+    let zip = File::open(zip_path)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP file: {}", e)))?;
+    let reader = BufReader::new(zip);
+    let mut archive = ZipArchive::new(reader)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP archive: {}", e)))?;
+
+    for i in 0..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .map_err(|e| VaultError::Error(format!("Failed to access file in archive: {}", e)))?;
+
+        if file.name() == ".vault-key" {
+            let mut content = Vec::new();
+            file.read_to_end(&mut content).map_err(|e| {
+                VaultError::Error(format!("Failed to read .vault-key content: {}", e))
+            })?;
+
+            let unencrypted_marker = b"vault_password_is_correct";
+            return Ok(content != unencrypted_marker);
+        }
+    }
+
+    Ok(false)
 }

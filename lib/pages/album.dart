@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
@@ -57,7 +56,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
         }
         final Uint8List uint8list = Uint8List.fromList(bytes!);
 
-        saveFileWrapper(uint8list, '$directory/${widget.name}');
+        await saveImageWrapper(uint8list, '$directory/${widget.name}');
       } catch (e) {
         debugPrint("Error processing image $i: $e");
       }

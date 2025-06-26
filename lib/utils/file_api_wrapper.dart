@@ -74,9 +74,9 @@ mixin FileApiWrapper {
     return data;
   }
 
-  Future<void> saveFileWrapper(data, path) async {
+  Future<void> saveImageWrapper(data, path) async {
     return await file_api
-        .saveFile(
+        .saveImage(
           imageData: data,
           dir: path,
         )
@@ -122,6 +122,19 @@ mixin FileApiWrapper {
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 
+  Future<void> restoreBackupWrapper(rootDir, zipPath, password) async {
+    return await file_api
+        .restoreBackup(rootDir: rootDir, zipPath: zipPath, password: password)
+        .catchError((e) => debugPrint("Vault error: WARN: $e"));
+  }
+
+  Future<bool> checkZipEncryptedWrapper(zipPath) async {
+    return await file_api.checkZipEncrypted(zipPath: zipPath).catchError((e) {
+      debugPrint("Vault error: WARN: $e");
+      throw e;
+    });
+  }
+
   List<Map<String, (String, double)>> sortMapToList(
       Map<String, (String, double)> inputMap) {
     // Convert the map entries to a list and sort by keys
@@ -132,6 +145,7 @@ mixin FileApiWrapper {
     return sortedEntries.map((entry) => {entry.key: entry.value}).toList();
   }
 }
+
 Future<Uint8List> _isolateGetFile(String path) async {
   await RustLib.init();
 

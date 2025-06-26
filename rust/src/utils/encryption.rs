@@ -128,3 +128,26 @@ pub fn check_password(password: &str, dir: &str) -> Result<bool, VaultError> {
     }
     Ok(false)
 }
+
+// OOP for temporary password based decryption
+#[derive(Zeroize, ZeroizeOnDrop)]
+pub struct PasswordDecrypter {
+    key: [u8; KEY_LEN],
+    iv: [u8; IV_LEN],
+}
+impl PasswordDecrypter {
+    pub fn new(password: &str) -> Self {
+        let (key, iv) = derive_key_and_iv(password, &SALT);
+        Self { key: key, iv: iv }
+    }
+    pub fn decrypt(&self, encrypted_data: &[u8]) -> Result<Vec<u8>, VaultError> {
+        let cipher = Aes256Cbc::new_from_slices(&self.key, &self.iv)
+            .map_err(|e| VaultError::Error(format!("Failed to create cipher: {}", e)))?;
+        cipher.decrypt_vec(encrypted_data).map_err(|_| {
+            VaultError::Error(
+                "Decryption failed. The password may be incorrect or the data is corrupt."
+                    .to_string(),
+            )
+        })
+    }
+}

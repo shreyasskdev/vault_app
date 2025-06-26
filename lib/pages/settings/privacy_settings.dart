@@ -7,6 +7,7 @@ import 'package:vault/providers.dart';
 import 'package:vault/widget/menu_item.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -22,7 +23,7 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
   static const double _menuSpacing = 10.0;
   static const double _borderRadius = 20.0;
 
-  Future backupAll() async {
+  Future<void> backupAll() async {
     final result = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -67,6 +68,116 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
+  }
+
+  Future<void> restoreBackup() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['zip'],
+      );
+
+      String? password;
+
+      if (result != null && result.files.single.path != null) {
+        String zipPath = result.files.single.path!;
+
+        if (await checkZipEncryptedWrapper(zipPath)) {
+          password = await showPasswordDialog();
+          if (password == null) return; // cancelled
+
+          if (password.isEmpty) {
+            // Show error for empty password
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Password cannot be empty'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+        }
+
+        // You could show a loading indicator here for a better UX
+        showDialog(
+            context: context,
+            builder: (_) => const Center(child: CircularProgressIndicator()));
+
+        Directory appDocDir = await getApplicationDocumentsDirectory();
+        String rootDirectory = '${appDocDir.path}/Collections';
+
+        await restoreBackupWrapper(rootDirectory, zipPath, password);
+
+        if (mounted) Navigator.of(context).pop();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Restore successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        debugPrint("Restore operation was canceled by the user.");
+      }
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Restore failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<String?> showPasswordDialog() async {
+    final TextEditingController passwordController = TextEditingController();
+
+    final result = await showDialog<String>(
+      context: context,
+      barrierDismissible: false, // User must enter password or cancel
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Enter Password"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                  "This archive is encrypted. Please enter the password:"),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () => Navigator.of(context).pop(null),
+            ),
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () =>
+                  Navigator.of(context).pop(passwordController.text),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result;
   }
 
   @override
@@ -132,6 +243,21 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     title: "Local Backup",
                     subtitle: "Backup all the contents encrypted or not",
                     onTap: backupAll,
+                    divider: false,
+                  ),
+                ],
+              ),
+              MenuSection(
+                borderRadius: _borderRadius,
+                menuSpacing: _menuSpacing,
+                children: [
+                  MenuItem(
+                    icon: CupertinoIcons.cloud_download,
+                    // icon: Icons.info,
+                    iconColor: theme.colorScheme.primary,
+                    title: "Restore Backup",
+                    subtitle: "Restore all the contents encrypted or not",
+                    onTap: restoreBackup,
                     divider: false,
                   ),
                 ],
