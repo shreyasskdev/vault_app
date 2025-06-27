@@ -113,6 +113,8 @@ fn load_validation_data(path: PathBuf) -> Result<Vec<u8>, VaultError> {
     fs::read(&path).map_err(|e| VaultError::Error(format!("Failed to read vault file: {}", e)))
 }
 pub fn save_validation_data(dir: &str, password: &str) -> Result<(), VaultError> {
+    fs::create_dir_all(dir)
+        .map_err(|e| VaultError::Error(format!("Failed to create directory '{}': {}", dir, e)))?;
     let full_path = Path::new(dir).join(VAULT_FILE);
     set_crypto_params(password)?;
     let verification_data_encrypted = encrypt_data(VERIFICATION_DATA)?;
