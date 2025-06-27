@@ -10,11 +10,14 @@ use walkdir::WalkDir;
 use zip::{write::FileOptions, ZipArchive, ZipWriter};
 
 // Custom error
-use crate::utils::error::VaultError;
+use crate::utils::{
+    encryption::{VAULT_FILE, VERIFICATION_DATA},
+    error::VaultError,
+    utils::verify_and_get_decrypter,
+};
 // Encrytion
 use crate::utils::encryption::{
     check_password, check_validation_data_exists, decrypt_data, encrypt_data, save_validation_data,
-    PasswordDecrypter,
 };
 // Caching
 use crate::utils::cache::cache_image;
@@ -292,7 +295,12 @@ pub fn restore_backup(
     fs::create_dir_all(root_dir_path)
         .map_err(|e| VaultError::Error(format!("Failed to create target directory: {}", e)))?;
 
-    let decrypter = password.as_deref().map(PasswordDecrypter::new);
+    // let decrypter = password.as_deref().map(PasswordDecrypter::new);
+    let decrypter = if let Some(pass) = password {
+        Some(verify_and_get_decrypter(&mut archive, &pass)?)
+    } else {
+        None
+    };
 
     for i in 0..archive.len() {
         let mut file = archive
@@ -350,6 +358,20 @@ pub fn restore_backup(
     Ok(())
 }
 
+pub fn check_zip_password(zip_path: &str, password: &str) -> Result<bool, VaultError> {
+    let zip = File::open(zip_path)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP file: {}", e)))?;
+    let reader = BufReader::new(zip);
+    let mut archive = ZipArchive::new(reader)
+        .map_err(|e| VaultError::Error(format!("Failed to open ZIP archive: {}", e)))?;
+
+    match verify_and_get_decrypter(&mut archive, password) {
+        Ok(_) => Ok(true),
+        Err(VaultError::IncorrectPassword) => Ok(false),
+        Err(e) => Err(e),
+    }
+}
+
 pub fn check_zip_encrypted(zip_path: &str) -> Result<bool, VaultError> {
     let zip = File::open(zip_path)
         .map_err(|e| VaultError::Error(format!("Failed to open ZIP file: {}", e)))?;
@@ -357,21 +379,14 @@ pub fn check_zip_encrypted(zip_path: &str) -> Result<bool, VaultError> {
     let mut archive = ZipArchive::new(reader)
         .map_err(|e| VaultError::Error(format!("Failed to open ZIP archive: {}", e)))?;
 
-    for i in 0..archive.len() {
-        let mut file = archive
-            .by_index(i)
-            .map_err(|e| VaultError::Error(format!("Failed to access file in archive: {}", e)))?;
+    let mut file = match archive.by_name(VAULT_FILE) {
+        Ok(file_in_zip) => file_in_zip,
+        Err(_) => return Ok(false),
+    };
 
-        if file.name() == ".vault-key" {
-            let mut content = Vec::new();
-            file.read_to_end(&mut content).map_err(|e| {
-                VaultError::Error(format!("Failed to read .vault-key content: {}", e))
-            })?;
+    let mut content = Vec::new();
+    file.read_to_end(&mut content)
+        .map_err(|e| VaultError::Error(format!("Failed to read .vault-key content: {}", e)))?;
 
-            let unencrypted_marker = b"vault_password_is_correct";
-            return Ok(content != unencrypted_marker);
-        }
-    }
-
-    Ok(false)
+    Ok(content != VERIFICATION_DATA)
 }

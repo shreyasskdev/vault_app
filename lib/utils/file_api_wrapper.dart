@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:vault/pages/password.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/src/rust/api/file.dart' as file_api;
 import 'package:vault/src/rust/frb_generated.dart';
@@ -130,6 +131,15 @@ mixin FileApiWrapper {
 
   Future<bool> checkZipEncryptedWrapper(zipPath) async {
     return await file_api.checkZipEncrypted(zipPath: zipPath).catchError((e) {
+      debugPrint("Vault error: WARN: $e");
+      throw e;
+    });
+  }
+
+  Future<bool> checkZipPasswordWrapper(zipPath, password) async {
+    return await file_api
+        .checkZipPassword(zipPath: zipPath, password: password)
+        .catchError((e) {
       debugPrint("Vault error: WARN: $e");
       throw e;
     });

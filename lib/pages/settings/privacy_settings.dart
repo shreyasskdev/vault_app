@@ -71,36 +71,30 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
   }
 
   Future<void> restoreBackup() async {
+    final currentContext = context;
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['zip'],
       );
 
-      String? password;
-
       if (result != null && result.files.single.path != null) {
         String zipPath = result.files.single.path!;
+        String? password; // Password will be null if not encrypted
 
         if (await checkZipEncryptedWrapper(zipPath)) {
-          password = await showPasswordDialog();
-          if (password == null) return; // cancelled
+          // The dialog now handles verification and only returns a
+          // password if it's correct.
+          password = await showPasswordDialog(currentContext, zipPath);
 
-          if (password.isEmpty) {
-            // Show error for empty password
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Password cannot be empty'),
-                backgroundColor: Colors.red,
-              ),
-            );
-            return;
-          }
+          // If the password is null, it means the user cancelled the dialog.
+          if (password == null) return;
         }
 
-        // You could show a loading indicator here for a better UX
+        // If we get here, we're ready to restore.
         showDialog(
-            context: context,
+            context: currentContext,
+            barrierDismissible: false,
             builder: (_) => const Center(child: CircularProgressIndicator()));
 
         Directory appDocDir = await getApplicationDocumentsDirectory();
@@ -108,26 +102,24 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
 
         await restoreBackupWrapper(rootDirectory, zipPath, password);
 
-        if (mounted) Navigator.of(context).pop();
+        if (currentContext.mounted) Navigator.of(currentContext).pop();
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+        if (currentContext.mounted) {
+          ScaffoldMessenger.of(currentContext).showSnackBar(
             const SnackBar(
               content: Text('Restore successful!'),
               backgroundColor: Colors.green,
             ),
           );
         }
-      } else {
-        debugPrint("Restore operation was canceled by the user.");
       }
     } catch (e) {
-      if (mounted) Navigator.of(context).pop();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (currentContext.mounted) Navigator.of(currentContext).pop();
+      if (currentContext.mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(
-            content: Text('Restore failed: $e'),
+            content: Text(
+                'Restore failed: ${e.toString().replaceFirst("Exception: ", "")}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -135,49 +127,110 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     }
   }
 
-  Future<String?> showPasswordDialog() async {
+  Future<String?> showPasswordDialog(
+      BuildContext context, String zipPath) async {
+    // This function now takes the zipPath to perform the check internally
     final TextEditingController passwordController = TextEditingController();
+    // A key to manage the form state, especially for validation
+    final formKey = GlobalKey<FormState>();
+    String? errorMessage;
+    bool isChecking = false;
 
-    final result = await showDialog<String>(
+    return showDialog<String>(
       context: context,
-      barrierDismissible: false, // User must enter password or cancel
+      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Enter Password"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                  "This archive is encrypted. Please enter the password:"),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+        // Use a StatefulWidget to manage error messages and loading state
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Enter Password"),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                        "This archive is encrypted. Please enter the password:"),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock),
+                        // Display the error message from our state
+                        errorText: errorMessage,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Password cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (isChecking) ...[
+                      const SizedBox(height: 16),
+                      const CircularProgressIndicator(),
+                    ]
+                  ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () => Navigator.of(context).pop(null),
-            ),
-            TextButton(
-              child: const Text("OK"),
-              onPressed: () =>
-                  Navigator.of(context).pop(passwordController.text),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () => Navigator.of(context).pop(null),
+                ),
+                TextButton(
+                  // Disable the button while checking
+                  onPressed: isChecking
+                      ? null
+                      : () async {
+                          if (formKey.currentState!.validate()) {
+                            setState(() {
+                              isChecking = true;
+                              errorMessage = null;
+                            });
+
+                            try {
+                              final isPasswordCorrect =
+                                  await checkZipPasswordWrapper(
+                                zipPath,
+                                passwordController.text,
+                              );
+
+                              if (isPasswordCorrect) {
+                                // If correct, close the dialog and return the password
+                                if (context.mounted)
+                                  Navigator.of(context)
+                                      .pop(passwordController.text);
+                              } else {
+                                // If wrong, update the state to show an error message
+                                setState(() {
+                                  errorMessage =
+                                      'Incorrect password. Please try again.';
+                                  isChecking = false;
+                                });
+                              }
+                            } catch (e) {
+                              setState(() {
+                                errorMessage =
+                                    'An error occurred. Please try again.';
+                                isChecking = false;
+                              });
+                            }
+                          }
+                        },
+                  child: const Text("OK"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-
-    return result;
   }
 
   @override
@@ -245,12 +298,6 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     onTap: backupAll,
                     divider: false,
                   ),
-                ],
-              ),
-              MenuSection(
-                borderRadius: _borderRadius,
-                menuSpacing: _menuSpacing,
-                children: [
                   MenuItem(
                     icon: CupertinoIcons.cloud_download,
                     // icon: Icons.info,

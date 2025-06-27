@@ -28,8 +28,8 @@ const SALT: [u8; SALT_LEN] = [
     17, 128, 16, 104, 193, 198, 63, 155, 239, 14, 180, 237, 137, 144, 175, 49, 118, 108, 13, 147,
     174, 122, 195, 174, 176, 103, 104, 156, 151, 114, 101, 106,
 ];
-const VAULT_FILE: &str = ".vault-key";
-const VERIFICATION_DATA: &[u8] = b"vault_password_is_correct";
+pub const VAULT_FILE: &str = ".vault-key";
+pub const VERIFICATION_DATA: &[u8] = b"vault_password_is_correct";
 
 #[derive(Zeroize)]
 struct CryptoParams {

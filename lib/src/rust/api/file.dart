@@ -58,5 +58,10 @@ Future<void> restoreBackup(
     RustLib.instance.api.crateApiFileRestoreBackup(
         rootDir: rootDir, zipPath: zipPath, password: password);
 
+Future<bool> checkZipPassword(
+        {required String zipPath, required String password}) =>
+    RustLib.instance.api
+        .crateApiFileCheckZipPassword(zipPath: zipPath, password: password);
+
 Future<bool> checkZipEncrypted({required String zipPath}) =>
     RustLib.instance.api.crateApiFileCheckZipEncrypted(zipPath: zipPath);

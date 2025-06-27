@@ -15,4 +15,5 @@ sealed class VaultError with _$VaultError implements FrbException {
   const factory VaultError.error(
     String field0,
   ) = VaultError_Error;
+  const factory VaultError.incorrectPassword() = VaultError_IncorrectPassword;
 }
