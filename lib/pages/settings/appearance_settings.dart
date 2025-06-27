@@ -55,31 +55,6 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
                     onChanged: (value) =>
                         {ref.read(SettingsModelProvider).toggleDarkmode()},
                   ),
-                  MenuItem(
-                    icon: CupertinoIcons.paintbrush,
-                    // icon: Icons.palette,
-                    iconColor: theme.colorScheme.primary,
-                    title: "Appearance",
-                    subtitle: "Customize app appearance",
-                    onTap: () => {},
-                    divider: false,
-                  ),
-                ],
-              ),
-              const SizedBox(height: _menuSpacing),
-              MenuSection(
-                borderRadius: _borderRadius,
-                menuSpacing: _menuSpacing,
-                children: [
-                  MenuItem(
-                    icon: CupertinoIcons.info,
-                    // icon: Icons.info,
-                    iconColor: theme.colorScheme.primary,
-                    title: "About",
-                    subtitle: "Learn more about this app",
-                    onTap: () => {},
-                    divider: false,
-                  ),
                 ],
               ),
             ],

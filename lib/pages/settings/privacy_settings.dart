@@ -246,7 +246,7 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text("Appearance",
+        title: const Text("Privacy",
             style: TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
       ),
@@ -272,15 +272,6 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     onChanged: (value) => {
                       ref.read(SettingsModelProvider).toggleTheftProtection()
                     },
-                  ),
-                  MenuItem(
-                    icon: CupertinoIcons.paintbrush,
-                    // icon: Icons.palette,
-                    iconColor: theme.colorScheme.primary,
-                    title: "Appearance",
-                    subtitle: "Customize app appearance",
-                    onTap: () => {},
-                    divider: false,
                   ),
                 ],
               ),

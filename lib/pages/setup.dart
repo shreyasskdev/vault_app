@@ -18,9 +18,22 @@ class _SetupPageState extends ConsumerState<SetupPage>
   String? errorMessage;
   bool _isSaving = false;
 
+  // --- FIX: Add initState to listen for changes ---
+  @override
+  void initState() {
+    super.initState();
+    // Add a listener that will call setState() on every text change
+    _controller.addListener(() {
+      setState(() {
+        // The state is rebuilt, so the button's condition is re-evaluated.
+      });
+    });
+  }
+
   void savePassword() async {
     if (_isSaving) return;
 
+    // No changes needed in this method
     setState(() {
       _isSaving = true;
       errorMessage = null;
@@ -75,7 +88,8 @@ class _SetupPageState extends ConsumerState<SetupPage>
                   controller: _controller,
                   enabled: !_isSaving,
                   onSubmitted: (String value) {
-                    if (value.isNotEmpty) {
+                    // This can be simplified now
+                    if (_controller.text.isNotEmpty) {
                       savePassword();
                     }
                   },
@@ -88,6 +102,7 @@ class _SetupPageState extends ConsumerState<SetupPage>
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
+                    // This logic is now correct because setState is being called
                     onPressed: _isSaving || _controller.text.isEmpty
                         ? null
                         : savePassword,
@@ -121,7 +136,7 @@ class _SetupPageState extends ConsumerState<SetupPage>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.dispose(); // The listener is automatically removed by dispose()
     super.dispose();
   }
 }
