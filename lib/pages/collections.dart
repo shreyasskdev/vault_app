@@ -7,6 +7,7 @@ import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:smooth_gradient/smooth_gradient.dart';
 import 'package:vault/moiton_detector.dart';
 import 'package:vault/widget/touchable.dart';
 
@@ -28,12 +29,39 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
   List<Map<String, (String, double)>?>? imageValue;
 
   bool _isSelectionMode = false;
-  Set<int> _selectedIndices = {};
+  final Set<int> _selectedIndices = {};
+
+  // Scroll-based gradient animation variables
+  late final ScrollController _scrollController;
+  bool _isGradientVisible = false;
 
   @override
   void initState() {
     super.initState();
+    // Initialize the ScrollController and add a listener
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
     init();
+  }
+
+  // Scroll listener function
+  void _scrollListener() {
+    // Check if the user has scrolled down from the top
+    final bool shouldBeVisible = _scrollController.offset > 0;
+    // Only call setState if the visibility state actually needs to change
+    if (shouldBeVisible != _isGradientVisible) {
+      setState(() {
+        _isGradientVisible = shouldBeVisible;
+      });
+    }
+  }
+
+  // Dispose of the controller to prevent memory leaks
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> init() async {
@@ -262,7 +290,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       );
     }
 
-    void _toggleSelectionMode(int index) {
+    void toggleSelectionMode(int index) {
       setState(() {
         _isSelectionMode = true;
         _selectedIndices.add(index);
@@ -270,7 +298,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       HapticFeedback.mediumImpact();
     }
 
-    void _toggleSelection(int index) {
+    void toggleSelection(int index) {
       setState(() {
         if (_selectedIndices.contains(index)) {
           _selectedIndices.remove(index);
@@ -284,14 +312,14 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       HapticFeedback.lightImpact();
     }
 
-    void _exitSelectionMode() {
+    void exitSelectionMode() {
       setState(() {
         _isSelectionMode = false;
         _selectedIndices.clear();
       });
     }
 
-    Future<void> _deleteSelectedAlbums() async {
+    Future<void> deleteSelectedAlbums() async {
       if (appDirectoryPath == null) return;
 
       // Sort indices in descending order to avoid index shifting during deletion
@@ -305,53 +333,67 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
         }
       }
 
-      _exitSelectionMode();
+      exitSelectionMode();
       await getDirsAndAlbum();
     }
 
     return MotionDetector(
-      child: SafeArea(
-        child: Scaffold(
-          appBar: AppBar(
-            leading: _isSelectionMode
-                ? IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: _exitSelectionMode,
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.settings_outlined),
-                    onPressed: () {
-                      context.push("/settings");
-                    },
-                  ),
-            title: _isSelectionMode
-                ? Text("${_selectedIndices.length} selected")
-                : const Text("Vault",
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-            centerTitle: true,
-            actions: <Widget>[
-              if (_isSelectionMode)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: _deleteSelectedAlbums,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: _isSelectionMode
+              ? IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: exitSelectionMode,
                 )
-              else
-                TouchableOpacity(
+              : IconButton(
+                  icon: const Icon(Icons.settings_outlined),
                   onPressed: () {
-                    createNewAlbum(context);
-                    HapticFeedback.heavyImpact();
+                    context.push("/settings");
                   },
-                  child: const Padding(
-                    padding: EdgeInsets.only(
-                        right: 15, left: 10, top: 10, bottom: 10),
-                    child: Icon(Icons.add_circle_outline_rounded, size: 25),
-                  ),
                 ),
-            ],
-          ),
-          body: SafeArea(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(14),
+          title: _isSelectionMode
+              ? Text("${_selectedIndices.length} selected")
+              : const Text("Vault",
+                  style: TextStyle(fontWeight: FontWeight.w600)),
+          centerTitle: true,
+          actions: <Widget>[
+            if (_isSelectionMode)
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: deleteSelectedAlbums,
+              )
+            else
+              TouchableOpacity(
+                onPressed: () {
+                  createNewAlbum(context);
+                  HapticFeedback.heavyImpact();
+                },
+                child: const Padding(
+                  padding:
+                      EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+                  child: Icon(Icons.add_circle_outline_rounded, size: 25),
+                ),
+              ),
+          ],
+          forceMaterialTransparency: true,
+        ),
+        body: Stack(
+          children: [
+            // The GridView is the primary interactive layer
+            GridView.builder(
+              // Attach the scroll controller here
+              controller: _scrollController,
+              padding: EdgeInsets.only(
+                top: kToolbarHeight +
+                    MediaQuery.of(context).padding.top +
+                    14, // AppBar height + status bar height + your desired extra padding
+                left: 14,
+                right: 14,
+                bottom: 14,
+              ),
               physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics(),
               ),
@@ -368,7 +410,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 return GestureDetector(
                   onTap: () {
                     if (_isSelectionMode) {
-                      _toggleSelection(index);
+                      toggleSelection(index);
                     } else {
                       context
                           .push("/album/${directories?[index].split("/").last}")
@@ -379,7 +421,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                   },
                   onLongPress: () {
                     if (!_isSelectionMode) {
-                      _toggleSelectionMode(index);
+                      toggleSelectionMode(index);
                     }
                   },
                   child: Stack(
@@ -488,7 +530,28 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 );
               },
             ),
-          ),
+
+            // This is the scroll-based animated gradient overlay
+            IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _isGradientVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.fastEaseInToSlowEaseOut,
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: SmoothGradient(
+                      from: Colors.black,
+                      to: Colors.transparent,
+                      curve: const Cubic(.05, .26, 1, .55),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

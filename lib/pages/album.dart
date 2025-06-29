@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:smooth_gradient/smooth_gradient.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -26,10 +27,39 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
   bool _isSelectionMode = false;
   Set<int> _selectedIndices = {};
 
+  // 1. Create a ScrollController to monitor the GridView's scroll position.
+  late final ScrollController _scrollController;
+  // 2. Create a boolean to track if the gradient should be visible.
+  bool _isGradientVisible = false;
+
   @override
   void initState() {
     super.initState();
+    // 3. Initialize the ScrollController and add a listener to it.
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
     getImages();
+  }
+
+  // 4. This listener function is called every time the user scrolls.
+  void _scrollListener() {
+    // Check if the user has scrolled down from the top.
+    final bool shouldBeVisible = _scrollController.offset > 0;
+    // Only call setState if the visibility state actually needs to change.
+    // This prevents unnecessary rebuilds on every scroll tick.
+    if (shouldBeVisible != _isGradientVisible) {
+      setState(() {
+        _isGradientVisible = shouldBeVisible;
+      });
+    }
+  }
+
+  // 5. It's crucial to dispose of the controller to prevent memory leaks.
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future getImageFromGallery() async {
@@ -148,9 +178,15 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
 
   @override
   Widget build(BuildContext context) {
+    // Calculate the total height needed for top padding.
+    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        forceMaterialTransparency: true,
         leading: _isSelectionMode
             ? IconButton(
                 icon: const Icon(Icons.close),
@@ -168,20 +204,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
             : Text(widget.name,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
         centerTitle: true,
-        elevation: 0,
-        // backgroundColor: const Color.fromARGB(135, 0, 0, 0),
-        // forceMaterialTransparency: true,
-        // flexibleSpace: ClipRRect(
-        //   child: BackdropFilter(
-        //     filter: ImageFilter.compose(
-        //       outer: ImageFilter.blur(
-        //           sigmaY: 20, sigmaX: 20, tileMode: TileMode.decal),
-        //       inner: ImageFilter.blur(
-        //           sigmaY: 40, sigmaX: 30, tileMode: TileMode.clamp),
-        //     ),
-        //     child: Container(color: Colors.transparent),
-        //   ),
-        // ),
         actions: <Widget>[
           if (_isSelectionMode)
             IconButton(
@@ -202,106 +224,143 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
             ),
         ],
       ),
-      body: GridView.builder(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 160,
-          childAspectRatio: 1 / 1,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
-        ),
-        itemCount: files.length,
-        itemBuilder: (BuildContext context, int index) {
-          final isSelected = _selectedIndices.contains(index);
+      body: Stack(
+        children: [
+          // The GridView is the primary interactive layer.
+          GridView.builder(
+            // 6. Attach the scroll controller here.
+            controller: _scrollController,
+            padding: EdgeInsets.only(
+              top: topPadding + 14,
+              left: 0,
+              right: 0,
+              bottom: 14,
+            ),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 160,
+              childAspectRatio: 1 / 1,
+              mainAxisSpacing: 2,
+              crossAxisSpacing: 2,
+            ),
+            itemCount: files.length,
+            itemBuilder: (BuildContext context, int index) {
+              final isSelected = _selectedIndices.contains(index);
 
-          return GestureDetector(
-            onTap: () {
-              if (_isSelectionMode) {
-                _toggleSelection(index);
-              } else {
-                final String imageUrl =
-                    Uri.encodeQueryComponent(photoDirectoryPath);
-                context.push("/photo/$imageUrl/$index/${files.length}");
-              }
-            },
-            onLongPress: () {
-              if (!_isSelectionMode) {
-                _toggleSelectionMode(index);
-              }
-            },
-            child: Hero(
-              tag: index,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: isSelected ? Colors.white : Colors.black,
-                    width: isSelected ? 3 : 0,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 1 / 1,
-                      child: FutureBuilder<Widget>(
-                        future: chainedAsyncOperations(index),
-                        builder: (context, snapshot) {
-                          Widget child;
-                          if (snapshot.hasData) {
-                            child = SizedBox.expand(child: snapshot.data!);
-                          } else {
-                            child = BlurHash(hash: files[index].values.last.$1);
-                          }
-                          return AnimatedSwitcher(
-                            transitionBuilder:
-                                (Widget child, Animation<double> animation) {
-                              return FadeTransition(
-                                opacity: animation,
+              return GestureDetector(
+                onTap: () {
+                  if (_isSelectionMode) {
+                    _toggleSelection(index);
+                  } else {
+                    final String imageUrl =
+                        Uri.encodeQueryComponent(photoDirectoryPath);
+                    context.push("/photo/$imageUrl/$index/${files.length}");
+                  }
+                },
+                onLongPress: () {
+                  if (!_isSelectionMode) {
+                    _toggleSelectionMode(index);
+                  }
+                },
+                child: Hero(
+                  tag: index,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: isSelected ? Colors.white : Colors.black,
+                        width: isSelected ? 3 : 0,
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1 / 1,
+                          child: FutureBuilder<Widget>(
+                            future: chainedAsyncOperations(index),
+                            builder: (context, snapshot) {
+                              Widget child;
+                              if (snapshot.hasData) {
+                                child = SizedBox.expand(child: snapshot.data!);
+                              } else {
+                                child =
+                                    BlurHash(hash: files[index].values.last.$1);
+                              }
+                              return AnimatedSwitcher(
+                                transitionBuilder: (Widget child,
+                                    Animation<double> animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                                duration: const Duration(milliseconds: 200),
                                 child: child,
                               );
                             },
-                            duration: const Duration(milliseconds: 200),
-                            child: child,
-                          );
-                        },
-                      ),
-                    ),
-                    if (_isSelectionMode)
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.white.withOpacity(0.8),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.grey.withOpacity(0.5),
-                              width: 2,
+                          ),
+                        ),
+                        if (_isSelectionMode)
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.white.withOpacity(0.8),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Colors.grey.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
+                              child: isSelected
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.white,
+                                    )
+                                  : null,
                             ),
                           ),
-                          child: isSelected
-                              ? const Icon(
-                                  Icons.check,
-                                  size: 16,
-                                  color: Colors.white,
-                                )
-                              : null,
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // This is the decorative gradient layer. It is BEHIND the GridView.
+          IgnorePointer(
+            // 7. Wrap the gradient in AnimatedOpacity for the fade effect.
+            child: AnimatedOpacity(
+              opacity: _isGradientVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.fastEaseInToSlowEaseOut,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  // border: Border.all(color: Colors.red, width: 1),
+                  gradient: SmoothGradient(
+                    from: Colors.black,
+                    to: Colors.transparent,
+                    curve: const Cubic(.05, .26, 1, .55),
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
