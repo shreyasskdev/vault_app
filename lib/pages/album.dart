@@ -90,9 +90,10 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       } catch (e) {
         debugPrint("Error processing image $i: $e");
       }
+      getImages();
     }
 
-    getImages();
+    // getImages();
   }
 
   void getImages() async {

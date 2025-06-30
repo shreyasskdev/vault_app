@@ -266,12 +266,13 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     icon: CupertinoIcons.brightness,
                     // icon: Icons.sunny,
                     iconColor: theme.colorScheme.primary,
-                    title: "Teft protection",
+                    title: "Theft protection",
                     subtitle: "Theft protection with gyrosope",
                     value: ref.watch(SettingsModelProvider).TheftProtection,
                     onChanged: (value) => {
                       ref.read(SettingsModelProvider).toggleTheftProtection()
                     },
+                    divider: false,
                   ),
                 ],
               ),
@@ -287,7 +288,7 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     title: "Local Backup",
                     subtitle: "Backup all the contents encrypted or not",
                     onTap: backupAll,
-                    divider: false,
+                    divider: true,
                   ),
                   MenuItem(
                     icon: CupertinoIcons.cloud_download,

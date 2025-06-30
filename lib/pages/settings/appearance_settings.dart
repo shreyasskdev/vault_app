@@ -36,7 +36,8 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
       body: SizedBox.expand(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           child: Column(
             children: [
               const SizedBox(height: _menuSpacing),
@@ -54,6 +55,7 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
                     value: ref.watch(SettingsModelProvider).darkmode,
                     onChanged: (value) =>
                         {ref.read(SettingsModelProvider).toggleDarkmode()},
+                    divider: false,
                   ),
                 ],
               ),
