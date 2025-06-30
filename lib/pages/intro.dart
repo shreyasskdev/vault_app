@@ -96,8 +96,11 @@ class _IntroductionPageState extends State<IntroductionPage> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: _currentIndex == index
-                              ? Colors.black
-                              : Colors.grey.shade400,
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withAlpha(100),
                         ),
                       ),
                     ),
@@ -105,10 +108,15 @@ class _IntroductionPageState extends State<IntroductionPage> {
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      minimumSize: const Size(double.infinity, 48),
-                    ),
+                    style:
+                        Theme.of(context).elevatedButtonTheme.style?.copyWith(
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              minimumSize: WidgetStateProperty.all(
+                                const Size(double.infinity, 48),
+                              ),
+                            ),
                     child: Text(
                       _currentIndex == slides.length - 1
                           ? "Get Started"

@@ -1,15 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// const textColor = Color(0xFF1d1618);
-// const backgroundColor = Color(0xFFf8f6f6);
-// const primaryColor = Color(0xFF4f363b);
-// const primaryFgColor = Color(0xFFf8f6f6);
-// const secondaryColor = Color(0xFFbb959c);
-// const secondaryFgColor = Color(0xFF1d1618);
-// const accentColor = Color(0xFF8f5661);
-// const accentFgColor = Color(0xFFf8f6f6);
-
 const textColor = Colors.black;
 const backgroundColor = Colors.white;
 const primaryColor = Colors.black;
@@ -19,31 +10,52 @@ const secondaryFgColor = Colors.white;
 const accentColor = Colors.black;
 const accentFgColor = Colors.white;
 
-const colorScheme = ColorScheme(
+const MaterialColor backgroundShade = MaterialColor(
+  50,
+  <int, Color>{
+    50: Color.fromARGB(255, 255, 255, 255),
+    100: Color.fromARGB(255, 245, 245, 245),
+    200: Color.fromARGB(255, 235, 235, 235),
+    300: Color.fromARGB(255, 225, 225, 225),
+    400: Color.fromARGB(255, 215, 215, 215),
+    500: Color.fromARGB(255, 200, 200, 200),
+    600: Color.fromARGB(255, 180, 180, 180),
+    700: Color.fromARGB(255, 160, 160, 160),
+    800: Color.fromARGB(255, 140, 140, 140),
+    900: Color.fromARGB(255, 120, 120, 120),
+  },
+);
+
+ColorScheme colorScheme = ColorScheme(
   brightness: Brightness.light,
+  surface: backgroundColor,
+  //
+  surfaceBright: backgroundShade.shade50,
+  surfaceContainer: backgroundShade.shade200,
+  surfaceContainerHigh: backgroundShade.shade300,
+  surfaceContainerHighest: backgroundShade.shade400,
+  surfaceContainerLow: backgroundShade.shade100,
+  surfaceContainerLowest: backgroundShade.shade50,
+  surfaceDim: backgroundShade.shade500,
+  //
+  onSurface: textColor,
   primary: primaryColor,
   onPrimary: primaryFgColor,
   secondary: secondaryColor,
   onSecondary: secondaryFgColor,
   tertiary: accentColor,
   onTertiary: accentFgColor,
-  surface: backgroundColor,
-  onSurface: textColor,
   error: Brightness.light == Brightness.light
-      ? Color(0xffB3261E)
-      : Color(0xffF2B8B5),
+      ? const Color(0xffB3261E)
+      : const Color(0xffF2B8B5),
   onError: Brightness.light == Brightness.light
-      ? Color(0xffFFFFFF)
-      : Color(0xff601410),
+      ? const Color(0xffFFFFFF)
+      : const Color(0xff601410),
 );
 
 ThemeData lightTheme = ThemeData(
   scaffoldBackgroundColor: colorScheme.surface,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: colorScheme.primary,
-    error: colorScheme.error,
-    brightness: colorScheme.brightness,
-  ),
+  colorScheme: colorScheme,
   appBarTheme: AppBarTheme(
       backgroundColor: colorScheme.surface,
       surfaceTintColor: colorScheme.surface),
@@ -58,6 +70,7 @@ ThemeData lightTheme = ThemeData(
     displayMedium: TextStyle(color: colorScheme.onSurface),
     displayLarge: TextStyle(color: colorScheme.onSurface),
   ),
+  fontFamily: GoogleFonts.poppins().fontFamily,
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
       TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -69,14 +82,50 @@ ThemeData lightTheme = ThemeData(
     },
   ),
   inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: colorScheme.onPrimary,
-    border: InputBorder.none,
-    enabledBorder: UnderlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+    contentPadding: const EdgeInsets.only(left: 15),
+    hintStyle: TextStyle(
+      color: colorScheme.surfaceDim,
+      fontWeight: FontWeight.w600,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+      borderRadius: const BorderRadius.all(Radius.circular(16)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: BorderSide(color: colorScheme.surfaceContainer, width: 2),
+      borderRadius: const BorderRadius.all(Radius.circular(20)),
+    ),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      foregroundColor: colorScheme.onPrimary,
+      backgroundColor: colorScheme.primary,
     ),
   ),
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
+  ),
+  dialogTheme: DialogThemeData(
+    backgroundColor: colorScheme.surfaceContainerHighest,
+  ),
+  switchTheme: SwitchThemeData(
+    thumbColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.surface; // Thumb color when ON
+      }
+      return colorScheme.surfaceDim; // Thumb color when OFF
+    }),
+    trackColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.primary; // Track color when ON
+      }
+      return colorScheme.surface; // Track color when OFF
+    }),
+    trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+      if (states.contains(WidgetState.selected)) {
+        return colorScheme.primary; // Outline color when ON
+      }
+      return colorScheme.surfaceDim; // Outline color when OFF
+    }),
   ),
 );

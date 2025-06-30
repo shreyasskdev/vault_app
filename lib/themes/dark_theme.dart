@@ -1,15 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// const textColor = Color(0xFFe9e2e4);
-// const backgroundColor = Color(0xFF080606);
-// const primaryColor = Color(0xFFc9b0b5);
-// const primaryFgColor = Color(0xFF080606);
-// const secondaryColor = Color(0xFF6b444b);
-// const secondaryFgColor = Color(0xFFe9e2e4);
-// const accentColor = Color(0xFFa96f7a);
-// const accentFgColor = Color(0xFF080606);
-
 const textColor = Colors.white;
 const backgroundColor = Colors.black;
 const primaryColor = Colors.white;
@@ -35,12 +26,9 @@ const MaterialColor backgroundShade = MaterialColor(
   },
 );
 
-// Color getBackgroundColor900() {
-//   return backgroundColor.shade900;
-// }
-
 ColorScheme colorScheme = ColorScheme(
   brightness: Brightness.dark,
+  // surface: Colors.red,
   surface: backgroundColor,
   //
   surfaceBright: backgroundShade.shade100,
@@ -59,30 +47,31 @@ ColorScheme colorScheme = ColorScheme(
   tertiary: accentColor,
   onTertiary: accentFgColor,
   error: Brightness.dark == Brightness.light
-      ? Color(0xffB3261E)
-      : Color(0xffF2B8B5),
+      ? const Color(0xffB3261E)
+      : const Color(0xffF2B8B5),
   onError: Brightness.dark == Brightness.light
-      ? Color(0xffFFFFFF)
-      : Color(0xff601410),
+      ? const Color(0xffFFFFFF)
+      : const Color(0xff601410),
 );
 
 ThemeData darkTheme = ThemeData(
   scaffoldBackgroundColor: colorScheme.surface,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: colorScheme.primary,
-    error: colorScheme.error,
-    brightness: colorScheme.brightness,
+  colorScheme: colorScheme,
+  // colorScheme: ColorScheme.fromSeed(
+  //   seedColor: colorScheme.primary,
+  //   error: colorScheme.error,
+  //   brightness: colorScheme.brightness,
 
-    primary: colorScheme.primary,
-    //
-    surfaceBright: colorScheme.surfaceBright,
-    surfaceContainer: colorScheme.surfaceContainer,
-    surfaceContainerHigh: colorScheme.surfaceContainerHigh,
-    surfaceContainerHighest: colorScheme.surfaceContainerHighest,
-    surfaceContainerLow: colorScheme.surfaceContainerLow,
-    surfaceContainerLowest: colorScheme.surfaceContainerLowest,
-    surfaceDim: colorScheme.surfaceDim,
-  ),
+  //   primary: colorScheme.primary,
+  //   //
+  //   surfaceBright: colorScheme.surfaceBright,
+  //   surfaceContainer: colorScheme.surfaceContainer,
+  //   surfaceContainerHigh: colorScheme.surfaceContainerHigh,
+  //   surfaceContainerHighest: colorScheme.surfaceContainerHighest,
+  //   surfaceContainerLow: colorScheme.surfaceContainerLow,
+  //   surfaceContainerLowest: colorScheme.surfaceContainerLowest,
+  //   surfaceDim: colorScheme.surfaceDim,
+  // ),
   appBarTheme: AppBarTheme(
       backgroundColor: colorScheme.surface,
       surfaceTintColor: colorScheme.surface),
@@ -130,17 +119,20 @@ ThemeData darkTheme = ThemeData(
     ),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-    foregroundColor: colorScheme.onPrimary,
-  )),
+    style: ElevatedButton.styleFrom(
+      foregroundColor: colorScheme.onPrimary,
+      backgroundColor: colorScheme.primary,
+    ),
+  ),
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
   ),
   // dialogTheme: DialogTheme(
   //   backgroundColor: colorScheme.surfaceContainerHighest,
   // ),
-  dialogTheme:
-      DialogThemeData(backgroundColor: colorScheme.surfaceContainerHighest),
+  dialogTheme: DialogThemeData(
+    backgroundColor: colorScheme.surfaceContainerHighest,
+  ),
   switchTheme: SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith((states) {
       if (states.contains(WidgetState.selected)) {
@@ -162,34 +154,3 @@ ThemeData darkTheme = ThemeData(
     }),
   ),
 );
-
-
-// import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
-
-// ThemeData darkTheme = ThemeData(
-//   brightness: Brightness.dark,
-//   scaffoldBackgroundColor: Colors.black,
-//   colorScheme: ColorScheme.fromSeed(
-//     seedColor: Colors.white,
-//     brightness: Brightness.dark,
-//     primary: Colors.white,
-//     onPrimary: Colors.black,
-//     background: Colors.black,
-//     onBackground: Colors.white,
-//     surface: Colors.black,
-//     onSurface: Colors.white,
-//   ),
-//   appBarTheme: AppBarTheme(
-//     backgroundColor: Colors.black,
-//     foregroundColor: Colors.white,
-//   ),
-//   textTheme: GoogleFonts.poppinsTextTheme().copyWith(
-//     bodySmall: const TextStyle(color: Colors.white),
-//     bodyMedium: const TextStyle(color: Colors.white),
-//     bodyLarge: const TextStyle(color: Colors.white),
-//     labelSmall: const TextStyle(color: Colors.white),
-//     labelMedium: const TextStyle(color: Colors.white),
-//     labelLarge: const TextStyle(color: Colors.white),
-//   ),
-// );

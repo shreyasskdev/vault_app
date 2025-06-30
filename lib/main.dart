@@ -34,20 +34,24 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> setOptimalDisplayMode() async {
-    final List<DisplayMode> supported = await FlutterDisplayMode.supported;
-    final DisplayMode active = await FlutterDisplayMode.active;
+    try {
+      final List<DisplayMode> supported = await FlutterDisplayMode.supported;
+      final DisplayMode active = await FlutterDisplayMode.active;
 
-    final List<DisplayMode> sameResolution = supported
-        .where((DisplayMode m) =>
-            m.width == active.width && m.height == active.height)
-        .toList()
-      ..sort((DisplayMode a, DisplayMode b) =>
-          b.refreshRate.compareTo(a.refreshRate));
+      final List<DisplayMode> sameResolution = supported
+          .where((DisplayMode m) =>
+              m.width == active.width && m.height == active.height)
+          .toList()
+        ..sort((DisplayMode a, DisplayMode b) =>
+            b.refreshRate.compareTo(a.refreshRate));
 
-    final DisplayMode mostOptimalMode =
-        sameResolution.isNotEmpty ? sameResolution.first : active;
+      final DisplayMode mostOptimalMode =
+          sameResolution.isNotEmpty ? sameResolution.first : active;
 
-    await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+      await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+    } catch (e) {
+      debugPrint("Error setting display mode: $e");
+    }
   }
 
   @override
@@ -56,9 +60,28 @@ class _MyAppState extends ConsumerState<MyApp> {
     final settings = ref.watch(SettingsModelProvider);
 
     return authStatus.when(
-      loading: () => const SplashScreen(),
-      error: (err, stack) => ErrorScreen(error: err.toString()),
+      loading: () {
+        // FIX: Provide a themed MaterialApp for the loading state.
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
+          home: const SplashScreen(),
+        );
+      },
+      error: (err, stack) {
+        // FIX: Provide a themed MaterialApp for the error state.
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
+          home: ErrorScreen(error: err.toString()),
+        );
+      },
       data: (_) {
+        // This is the main app state, which uses the router.
         final router = ref.watch(routerProvider);
         return MaterialApp.router(
           title: "Vault",
@@ -77,9 +100,11 @@ class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Center(child: CircularProgressIndicator())),
+    // FIX: This widget should NOT build its own MaterialApp.
+    // It should only return the content (the Scaffold).
+    // The theme will be inherited from the parent MaterialApp.
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
@@ -89,75 +114,10 @@ class ErrorScreen extends StatelessWidget {
   const ErrorScreen({super.key, required this.error});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Center(child: Text('Error: $error'))),
+    // FIX: This widget also should NOT build its own MaterialApp.
+    // It returns the Scaffold, and the theme is inherited.
+    return Scaffold(
+      body: Center(child: Text('Error: $error')),
     );
   }
 }
-
-// final GoRouter _router = GoRouter(
-//   initialLocation: '/',
-//   routes: [
-//     GoRoute(
-//       path: "/",
-//       builder: (context, state) => const Password(),
-//       routes: [
-//         GoRoute(
-//           path: "intro",
-//           builder: (context, state) => const IntroductionPage(),
-//         ),
-//         GoRoute(
-//           path: "setup",
-//           builder: (context, state) => const SetupPage(),
-//         ),
-//         GoRoute(
-//             path: "settings",
-//             builder: (context, state) => const SettingsPage(),
-//             routes: [
-//               GoRoute(
-//                 path: "privacy",
-//                 builder: (context, state) => const PrivacySettings(),
-//               ),
-//               GoRoute(
-//                 path: "appearance",
-//                 builder: (context, state) => const AppearanceSettings(),
-//               ),
-//               GoRoute(
-//                 path: "about",
-//                 builder: (context, state) => const AboutPage(),
-//               ),
-//             ]),
-//         GoRoute(
-//           path: "collections",
-//           builder: (context, state) => const CollectionsPage(),
-//         ),
-//         GoRoute(
-//           path: "album/:name",
-//           builder: (context, state) => AlbumPage(
-//             name: state.pathParameters["name"]!,
-//           ),
-//         ),
-//         GoRoute(
-//           path: "photo/:url/:index/:count",
-//           pageBuilder: (context, state) {
-//             return CustomTransitionPage(
-//               child: PhotoView(
-//                 url: state.pathParameters["url"]!,
-//                 index: int.parse(state.pathParameters["index"]!),
-//                 count: int.parse(state.pathParameters["count"]!),
-//               ),
-//               transitionsBuilder:
-//                   (context, animation, secondaryAnimation, child) {
-//                 return FadeTransition(
-//                     opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
-//                         .animate(animation),
-//                     child: child);
-//               },
-//             );
-//           },
-//         ),
-//       ],
-//     ),
-//   ],
-// );

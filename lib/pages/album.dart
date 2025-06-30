@@ -350,8 +350,9 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                 decoration: BoxDecoration(
                   // border: Border.all(color: Colors.red, width: 1),
                   gradient: SmoothGradient(
-                    from: Colors.black,
-                    to: Colors.transparent,
+                    from: Theme.of(context).colorScheme.surface,
+                    // from: Colors.black,
+                    to: Theme.of(context).colorScheme.surface.withAlpha(0),
                     curve: const Cubic(.05, .26, 1, .55),
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,

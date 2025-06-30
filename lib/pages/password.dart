@@ -18,29 +18,51 @@ class _PasswordState extends ConsumerState<Password>
     with fileapi.FileApiWrapper {
   final _controller = TextEditingController();
   String? errorMessage;
+  bool _isChecking = false;
 
-  void setPassword() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String directory = '${appDocDir.path}/Collections';
+  void checkPassword() async {
+    if (_isChecking || _controller.text.isEmpty) return;
 
-    await setPasswordWrapper(_controller.text, directory).then((value) {
-      if (value) {
-        if (mounted) {
-          ref.read(isAuthenticatedProvider.notifier).state = true;
-        }
+    setState(() {
+      _isChecking = true;
+      errorMessage = null;
+    });
+
+    try {
+      Directory appDocDir = await getApplicationDocumentsDirectory();
+      String directory = '${appDocDir.path}/Collections';
+
+      final isCorrect = await setPasswordWrapper(_controller.text, directory);
+
+      if (!mounted) return;
+
+      if (isCorrect) {
+        ref.read(isAuthenticatedProvider.notifier).state = true;
       } else {
         setState(() {
           errorMessage = "Wrong password";
+          _controller.clear();
         });
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          errorMessage = "An error occurred: ${e.toString()}";
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
-    // If authenticated, show loading instead of password form
     if (isAuthenticated) {
       return Scaffold(
         appBar: AppBar(
@@ -78,34 +100,51 @@ class _PasswordState extends ConsumerState<Password>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text(
-                  "Enter the password",
+                  "Enter your password",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 16),
                 TextField(
                   autofocus: true,
                   controller: _controller,
-                  onSubmitted: (String value) {
-                    setPassword();
-                  },
-                  onChanged: (_) => {
+                  enabled: !_isChecking,
+                  obscureText: true,
+                  onSubmitted: (_) => checkPassword(),
+                  onChanged: (_) {
                     setState(() {
-                      errorMessage = "";
-                    })
+                      if (errorMessage != null) {
+                        errorMessage = null;
+                      }
+                    });
                   },
                   decoration: const InputDecoration(
                     hintText: "Password",
                     border: OutlineInputBorder(),
                   ),
                 ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isChecking || _controller.text.isEmpty
+                        ? null
+                        : checkPassword,
+                    child: _isChecking
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text("Unlock"),
+                  ),
+                ),
+                // Display the error message using a separate Text widget
                 if (errorMessage != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: 16),
                     child: Text(
                       errorMessage!,
                       style: const TextStyle(
@@ -120,5 +159,11 @@ class _PasswordState extends ConsumerState<Password>
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

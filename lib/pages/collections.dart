@@ -108,7 +108,8 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
 
     if (imageValue![index] == null) {
       return Container(
-        color: const Color.fromARGB(255, 14, 14, 14),
+        // color: const Color.fromARGB(255, 14, 14, 14),
+        color: Theme.of(context).colorScheme.surfaceDim,
         child: const Center(
           child: Text("Empty"),
         ),
@@ -174,6 +175,9 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                     child: SizedBox(
                       height: 43,
                       child: TextField(
+                          onSubmitted: (string) {
+                            createNewAlbumDirectory();
+                          },
                           autofocus: true,
                           autocorrect: true,
                           cursorColor:
@@ -449,7 +453,15 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                                             imageValue![index]!.values.first.$1,
                                       );
                                     } else {
-                                      child = const Text("Empty");
+                                      child = Container(
+                                        // color: const Color.fromARGB(255, 14, 14, 14),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surfaceDim,
+                                        child: const Center(
+                                          child: Text("Empty"),
+                                        ),
+                                      );
                                     }
                                   }
                                   return AnimatedSwitcher(
@@ -460,13 +472,16 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                               ),
                             ),
                             Container(
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    Color.fromARGB(0, 0, 0, 0),
-                                    Color.fromARGB(200, 0, 0, 0)
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withAlpha(0),
+                                    Theme.of(context).colorScheme.surface
                                   ],
                                 ),
                               ),
@@ -490,7 +505,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                           decoration: BoxDecoration(
                             border: Border.all(
                               color: isSelected
-                                  ? Colors.white
+                                  ? Theme.of(context).colorScheme.onSurface
                                   : Colors.transparent,
                               width: 2,
                             ),
@@ -508,19 +523,26 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                               shape: BoxShape.circle,
                               color: isSelected
                                   ? Theme.of(context).colorScheme.primary
-                                  : Colors.white.withOpacity(0.8),
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.8),
                               border: Border.all(
                                 color: isSelected
                                     ? Theme.of(context).colorScheme.primary
-                                    : Colors.grey.withOpacity(0.5),
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceBright
+                                        .withOpacity(0.5),
                                 width: 2,
                               ),
                             ),
                             child: isSelected
-                                ? const Icon(
+                                ? Icon(
                                     Icons.check,
                                     size: 16,
-                                    color: Colors.white,
+                                    color:
+                                        Theme.of(context).colorScheme.onSurface,
                                   )
                                 : null,
                           ),
@@ -541,8 +563,8 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                   height: 200,
                   decoration: BoxDecoration(
                     gradient: SmoothGradient(
-                      from: Colors.black,
-                      to: Colors.transparent,
+                      from: Theme.of(context).colorScheme.surface,
+                      to: Theme.of(context).colorScheme.surface.withAlpha(0),
                       curve: const Cubic(.05, .26, 1, .55),
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
