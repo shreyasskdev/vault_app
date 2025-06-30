@@ -229,6 +229,8 @@ pub fn delete_file(path: &str) -> Result<(), VaultError> {
 }
 
 pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(), VaultError> {
+    const SKIP_PATTERNS: &[&str] = &[".hash", ".thumbs"];
+
     let mut buffer = Cursor::new(Vec::new());
     let mut zip = ZipWriter::new(&mut buffer);
     let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
@@ -238,6 +240,19 @@ pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(
         let entry = entry.unwrap();
         let path = entry.path();
         let name = path.strip_prefix(src_path).unwrap();
+
+        // Skip .hash and .thumb folders and anything inside them
+        if path.components().any(|component| {
+            if let Some(component_str) = component.as_os_str().to_str() {
+                SKIP_PATTERNS
+                    .iter()
+                    .any(|&pattern| component_str == pattern)
+            } else {
+                false
+            }
+        }) {
+            continue;
+        }
 
         if path.is_file() {
             zip.start_file(name.to_string_lossy(), options)
