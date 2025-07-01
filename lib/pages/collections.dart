@@ -9,7 +9,9 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
 import 'package:vault/moiton_detector.dart';
+import 'package:vault/providers.dart';
 import 'package:vault/widget/touchable.dart';
+import 'package:progressive_blur/progressive_blur.dart';
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -341,6 +343,163 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       await getDirsAndAlbum();
     }
 
+    Widget gridView = GridView.builder(
+      // Attach the scroll controller here
+      controller: _scrollController,
+      padding: EdgeInsets.only(
+        top: kToolbarHeight +
+            MediaQuery.of(context).padding.top +
+            14, // AppBar height + status bar height + your desired extra padding
+        left: 14,
+        right: 14,
+        bottom: 14,
+      ),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 160,
+        childAspectRatio: 1,
+        mainAxisSpacing: 5,
+        crossAxisSpacing: 5,
+      ),
+      itemCount: directories?.length,
+      itemBuilder: (BuildContext context, int index) {
+        final isSelected = _selectedIndices.contains(index);
+
+        return GestureDetector(
+          onTap: () {
+            if (_isSelectionMode) {
+              toggleSelection(index);
+            } else {
+              context
+                  .push("/album/${directories?[index].split("/").last}")
+                  .then((_) async {
+                await getDirsAndAlbum();
+              });
+            }
+          },
+          onLongPress: () {
+            if (!_isSelectionMode) {
+              toggleSelectionMode(index);
+            }
+          },
+          child: Stack(
+            children: [
+              ClipRSuperellipse(
+                borderRadius: BorderRadius.circular(30),
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                child: Stack(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1 / 1,
+                      child: FutureBuilder<Widget>(
+                        future: chainedAsyncOperations(index),
+                        builder: (context, snapshot) {
+                          Widget child;
+                          if (snapshot.hasData) {
+                            child = SizedBox.expand(child: snapshot.data!);
+                          } else {
+                            if (imageValue != null &&
+                                imageValue![index] != null &&
+                                imageValue![index]!.values.isNotEmpty) {
+                              child = BlurHash(
+                                hash: imageValue![index]!.values.first.$1,
+                              );
+                            } else {
+                              child = Container(
+                                // color: const Color.fromARGB(255, 14, 14, 14),
+                                color: Theme.of(context).colorScheme.surfaceDim,
+                                child: const Center(
+                                  child: Text("Empty"),
+                                ),
+                              );
+                            }
+                          }
+                          return AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: child,
+                          );
+                        },
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Theme.of(context).colorScheme.surface.withAlpha(0),
+                            Theme.of(context).colorScheme.surface
+                          ],
+                        ),
+                      ),
+                      alignment: Alignment.bottomRight,
+                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                      child: Text(
+                        directories![index].split("/").last,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.fade,
+                        maxLines: 1,
+                        softWrap: false,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_isSelectionMode)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              if (_isSelectionMode)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.8),
+                      border: Border.all(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceBright
+                                .withOpacity(0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: isSelected
+                        ? Icon(
+                            Icons.check,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          )
+                        : null,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+
     return MotionDetector(
       child: Scaffold(
         extendBodyBehindAppBar: true,
@@ -387,174 +546,24 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
         body: Stack(
           children: [
             // The GridView is the primary interactive layer
-            GridView.builder(
-              // Attach the scroll controller here
-              controller: _scrollController,
-              padding: EdgeInsets.only(
-                top: kToolbarHeight +
-                    MediaQuery.of(context).padding.top +
-                    14, // AppBar height + status bar height + your desired extra padding
-                left: 14,
-                right: 14,
-                bottom: 14,
-              ),
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                childAspectRatio: 1,
-                mainAxisSpacing: 5,
-                crossAxisSpacing: 5,
-              ),
-              itemCount: directories?.length,
-              itemBuilder: (BuildContext context, int index) {
-                final isSelected = _selectedIndices.contains(index);
-
-                return GestureDetector(
-                  onTap: () {
-                    if (_isSelectionMode) {
-                      toggleSelection(index);
-                    } else {
-                      context
-                          .push("/album/${directories?[index].split("/").last}")
-                          .then((_) async {
-                        await getDirsAndAlbum();
-                      });
-                    }
-                  },
-                  onLongPress: () {
-                    if (!_isSelectionMode) {
-                      toggleSelectionMode(index);
-                    }
-                  },
-                  child: Stack(
-                    children: [
-                      ClipRSuperellipse(
-                        borderRadius: BorderRadius.circular(30),
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        child: Stack(
-                          children: [
-                            AspectRatio(
-                              aspectRatio: 1 / 1,
-                              child: FutureBuilder<Widget>(
-                                future: chainedAsyncOperations(index),
-                                builder: (context, snapshot) {
-                                  Widget child;
-                                  if (snapshot.hasData) {
-                                    child =
-                                        SizedBox.expand(child: snapshot.data!);
-                                  } else {
-                                    if (imageValue != null &&
-                                        imageValue![index] != null &&
-                                        imageValue![index]!.values.isNotEmpty) {
-                                      child = BlurHash(
-                                        hash:
-                                            imageValue![index]!.values.first.$1,
-                                      );
-                                    } else {
-                                      child = Container(
-                                        // color: const Color.fromARGB(255, 14, 14, 14),
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceDim,
-                                        child: const Center(
-                                          child: Text("Empty"),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                  return AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 200),
-                                    child: child,
-                                  );
-                                },
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .surface
-                                        .withAlpha(0),
-                                    Theme.of(context).colorScheme.surface
-                                  ],
-                                ),
-                              ),
-                              alignment: Alignment.bottomRight,
-                              padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                              child: Text(
-                                directories![index].split("/").last,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.fade,
-                                maxLines: 1,
-                                softWrap: false,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (_isSelectionMode)
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.onSurface
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                      if (_isSelectionMode)
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withOpacity(0.8),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceBright
-                                        .withOpacity(0.5),
-                                width: 2,
-                              ),
-                            ),
-                            child: isSelected
-                                ? Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                  )
-                                : null,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
+            ref.watch(SettingsModelProvider).advancedTextures
+                ? ProgressiveBlurWidget(
+                    linearGradientBlur: const LinearGradientBlur(
+                      values: [1, 0],
+                      stops: [0, 0.2],
+                      start: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    sigma: _isGradientVisible ? 24.0 : 0,
+                    blurTextureDimensions: 128,
+                    child: gridView)
+                : gridView,
 
             // This is the scroll-based animated gradient overlay
+            // ref.watch(SettingsModelProvider).advancedTextures
+
             IgnorePointer(
+              // 7. Wrap the gradient in AnimatedOpacity for the fade effect.
               child: AnimatedOpacity(
                 opacity: _isGradientVisible ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 500),
@@ -562,8 +571,10 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 child: Container(
                   height: 200,
                   decoration: BoxDecoration(
+                    // border: Border.all(color: Colors.red, width: 1),
                     gradient: SmoothGradient(
                       from: Theme.of(context).colorScheme.surface,
+                      // from: Colors.black,
                       to: Theme.of(context).colorScheme.surface.withAlpha(0),
                       curve: const Cubic(.05, .26, 1, .55),
                       begin: Alignment.topCenter,
@@ -573,6 +584,19 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 ),
               ),
             ),
+
+            // const ProgressiveBlurWidget(
+            //   // tintColor: _prominentColor ?? Colors.black.withValues(alpha: 0.5),
+            //   linearGradientBlur: const LinearGradientBlur(
+            //     values: [0, 1],
+            //     stops: [0.5, 0.8],
+            //     start: Alignment.topCenter,
+            //     end: Alignment.bottomCenter,
+            //   ),
+            //   sigma: 24.0,
+            //   blurTextureDimensions: 128,
+            //   child: Text("hello"),
+            // ),
           ],
         ),
       ),

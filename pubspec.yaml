@@ -59,6 +59,7 @@ dependencies:
   freezed_annotation: ^2.4.4
 
   smooth_gradient: ^0.1.0
+  progressive_blur: ^0.0.2
 
 dev_dependencies:
   flutter_test:

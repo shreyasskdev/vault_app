@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:progressive_blur/progressive_blur.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/router_provider.dart';
 import 'themes/dark_theme.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
+  await ProgressiveBlurWidget.precache();
   runApp(
     const ProviderScope(
       child: MyApp(),

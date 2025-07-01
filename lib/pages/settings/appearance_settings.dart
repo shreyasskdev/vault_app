@@ -55,6 +55,19 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
                     value: ref.watch(SettingsModelProvider).darkmode,
                     onChanged: (value) =>
                         {ref.read(SettingsModelProvider).toggleDarkmode()},
+                    divider: true,
+                  ),
+                  MenuItemToggle(
+                    // context: context,
+                    icon: CupertinoIcons.square_stack_3d_up,
+                    // icon: Icons.sunny,
+                    iconColor: theme.colorScheme.primary,
+                    title: "Advanced Textures",
+                    subtitle: "Toggle advanced visual effects",
+                    value: ref.watch(SettingsModelProvider).advancedTextures,
+                    onChanged: (value) => {
+                      ref.read(SettingsModelProvider).toggleAdvancedTextures()
+                    },
                     divider: false,
                   ),
                 ],

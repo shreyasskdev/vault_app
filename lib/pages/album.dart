@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:progressive_blur/progressive_blur.dart';
+import 'package:vault/providers.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
@@ -25,23 +27,23 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
   String photoDirectoryPath = "";
 
   bool _isSelectionMode = false;
-  Set<int> _selectedIndices = {};
+  final Set<int> _selectedIndices = {};
 
-  // 1. Create a ScrollController to monitor the GridView's scroll position.
+  // ScrollController to monitor the GridView's scroll position.
   late final ScrollController _scrollController;
-  // 2. Create a boolean to track if the gradient should be visible.
+  // Boolean to track if the gradient/blur should be visible.
   bool _isGradientVisible = false;
 
   @override
   void initState() {
     super.initState();
-    // 3. Initialize the ScrollController and add a listener to it.
+    // Initialize the ScrollController and add a listener to it.
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
     getImages();
   }
 
-  // 4. This listener function is called every time the user scrolls.
+  // This listener function is called every time the user scrolls.
   void _scrollListener() {
     // Check if the user has scrolled down from the top.
     final bool shouldBeVisible = _scrollController.offset > 0;
@@ -54,7 +56,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
   }
 
-  // 5. It's crucial to dispose of the controller to prevent memory leaks.
+  // It's crucial to dispose of the controller to prevent memory leaks.
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
@@ -68,9 +70,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String directory = '${appDocDir.path}/Collections';
 
-    final List<XFile?> images =
-        // await ImagePicker().pickImage(source: ImageSource.gallery, );
-        await ImagePicker().pickMultiImage();
+    final List<XFile?> images = await ImagePicker().pickMultiImage();
 
     if (images.isEmpty) {
       debugPrint("No image selected");
@@ -92,8 +92,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       }
       getImages();
     }
-
-    // getImages();
   }
 
   void getImages() async {
@@ -116,8 +114,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     return Image.memory(
       gaplessPlayback: true,
       Uint8List.fromList(imageData),
-      // cacheWidth: 200,
-      // cacheHeight: ((size.height / size.width) * 200).toInt(),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
         debugPrint("Vault error: INFO: $error");
@@ -182,6 +178,115 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     // Calculate the total height needed for top padding.
     final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
 
+    final Widget gridView = GridView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.only(
+        top: topPadding + 14,
+        left: 0,
+        right: 0,
+        bottom: 14,
+      ),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 160,
+        childAspectRatio: 1 / 1,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+      ),
+      itemCount: files.length,
+      itemBuilder: (BuildContext context, int index) {
+        final isSelected = _selectedIndices.contains(index);
+
+        return GestureDetector(
+          onTap: () {
+            if (_isSelectionMode) {
+              _toggleSelection(index);
+            } else {
+              final String imageUrl =
+                  Uri.encodeQueryComponent(photoDirectoryPath);
+              context.push("/photo/$imageUrl/$index/${files.length}");
+            }
+          },
+          onLongPress: () {
+            if (!_isSelectionMode) {
+              _toggleSelectionMode(index);
+            }
+          },
+          child: Hero(
+            tag: index,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isSelected ? Colors.white : Colors.black,
+                  width: isSelected ? 3 : 0,
+                ),
+              ),
+              child: Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1 / 1,
+                    child: FutureBuilder<Widget>(
+                      future: chainedAsyncOperations(index),
+                      builder: (context, snapshot) {
+                        Widget child;
+                        if (snapshot.hasData) {
+                          child = SizedBox.expand(child: snapshot.data!);
+                        } else {
+                          child = BlurHash(hash: files[index].values.last.$1);
+                        }
+                        return AnimatedSwitcher(
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
+                          duration: const Duration(milliseconds: 200),
+                          child: child,
+                        );
+                      },
+                    ),
+                  ),
+                  if (_isSelectionMode)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.white.withOpacity(0.8),
+                          border: Border.all(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey.withOpacity(0.5),
+                            width: 2,
+                          ),
+                        ),
+                        child: isSelected
+                            ? const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -227,121 +332,22 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       ),
       body: Stack(
         children: [
-          // The GridView is the primary interactive layer.
-          GridView.builder(
-            // 6. Attach the scroll controller here.
-            controller: _scrollController,
-            padding: EdgeInsets.only(
-              top: topPadding + 14,
-              left: 0,
-              right: 0,
-              bottom: 14,
-            ),
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 160,
-              childAspectRatio: 1 / 1,
-              mainAxisSpacing: 2,
-              crossAxisSpacing: 2,
-            ),
-            itemCount: files.length,
-            itemBuilder: (BuildContext context, int index) {
-              final isSelected = _selectedIndices.contains(index);
-
-              return GestureDetector(
-                onTap: () {
-                  if (_isSelectionMode) {
-                    _toggleSelection(index);
-                  } else {
-                    final String imageUrl =
-                        Uri.encodeQueryComponent(photoDirectoryPath);
-                    context.push("/photo/$imageUrl/$index/${files.length}");
-                  }
-                },
-                onLongPress: () {
-                  if (!_isSelectionMode) {
-                    _toggleSelectionMode(index);
-                  }
-                },
-                child: Hero(
-                  tag: index,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? Colors.white : Colors.black,
-                        width: isSelected ? 3 : 0,
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 1 / 1,
-                          child: FutureBuilder<Widget>(
-                            future: chainedAsyncOperations(index),
-                            builder: (context, snapshot) {
-                              Widget child;
-                              if (snapshot.hasData) {
-                                child = SizedBox.expand(child: snapshot.data!);
-                              } else {
-                                child =
-                                    BlurHash(hash: files[index].values.last.$1);
-                              }
-                              return AnimatedSwitcher(
-                                transitionBuilder: (Widget child,
-                                    Animation<double> animation) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: child,
-                                  );
-                                },
-                                duration: const Duration(milliseconds: 200),
-                                child: child,
-                              );
-                            },
-                          ),
-                        ),
-                        if (_isSelectionMode)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.white.withOpacity(0.8),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Colors.grey.withOpacity(0.5),
-                                  width: 2,
-                                ),
-                              ),
-                              child: isSelected
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 16,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                      ],
-                    ),
+          // Conditionally apply the ProgressiveBlurWidget based on settings
+          ref.watch(SettingsModelProvider).advancedTextures
+              ? ProgressiveBlurWidget(
+                  linearGradientBlur: const LinearGradientBlur(
+                    values: [1, 0],
+                    stops: [0, 0.2],
+                    start: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                ),
-              );
-            },
-          ),
+                  sigma: _isGradientVisible ? 24.0 : 0,
+                  blurTextureDimensions: 128,
+                  child: gridView)
+              : gridView,
 
-          // This is the decorative gradient layer. It is BEHIND the GridView.
+          // This is the decorative gradient layer that fades in on scroll.
           IgnorePointer(
-            // 7. Wrap the gradient in AnimatedOpacity for the fade effect.
             child: AnimatedOpacity(
               opacity: _isGradientVisible ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 500),
@@ -349,10 +355,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
               child: Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  // border: Border.all(color: Colors.red, width: 1),
                   gradient: SmoothGradient(
                     from: Theme.of(context).colorScheme.surface,
-                    // from: Colors.black,
                     to: Theme.of(context).colorScheme.surface.withAlpha(0),
                     curve: const Cubic(.05, .26, 1, .55),
                     begin: Alignment.topCenter,

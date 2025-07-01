@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SettingsModel extends ChangeNotifier {
   bool _darkMode = true;
   bool _TheftProtection = true;
+  bool _advancedTextures = false;
 
   bool get darkmode => _darkMode;
   bool get TheftProtection => _TheftProtection;
+  bool get advancedTextures => _advancedTextures;
 
   void toggleDarkmode() {
     _darkMode = !_darkMode;
@@ -15,6 +17,11 @@ class SettingsModel extends ChangeNotifier {
 
   void toggleTheftProtection() {
     _TheftProtection = !_TheftProtection;
+    notifyListeners();
+  }
+
+  void toggleAdvancedTextures() {
+    _advancedTextures = !_advancedTextures;
     notifyListeners();
   }
 }
