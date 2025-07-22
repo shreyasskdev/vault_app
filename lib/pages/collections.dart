@@ -85,23 +85,21 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
   Future<void> getDirsAndAlbum() async {
     if (appDirectoryPath == null) await initAppDir();
 
-    List<String> directories = await getDirsWrapper(appDirectoryPath);
-    setState(() {
-      // this.directories = directories;
-      imageValue = [];
-    });
-    for (String directory in directories) {
-      await getAlbumThumbWrapper("${appDirectoryPath!}/$directory")
-          .then((value) {
-        setState(() {
-          imageValue!.add(value);
-        });
+    final newDirectories = await getDirsWrapper(appDirectoryPath);
+    final newImageValues = <Map<String, (String, double)>?>[];
+
+    for (String directory in newDirectories) {
+      final value =
+          await getAlbumThumbWrapper("${appDirectoryPath!}/$directory");
+      newImageValues.add(value);
+    }
+
+    if (mounted) {
+      setState(() {
+        directories = newDirectories;
+        imageValue = newImageValues;
       });
     }
-    setState(() {
-      this.directories = directories;
-      // imageValue = [];
-    });
   }
 
   Future<Widget> chainedAsyncOperations(index) async {
@@ -371,6 +369,13 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       ),
       itemCount: directories?.length,
       itemBuilder: (BuildContext context, int index) {
+        // If state is inconsistent, show a loading indicator
+        if (directories == null ||
+            imageValue == null ||
+            index >= directories!.length ||
+            index >= imageValue!.length) {
+          return const Center(child: CupertinoActivityIndicator());
+        }
         final isSelected = _selectedIndices.contains(index);
 
         return GestureDetector(
