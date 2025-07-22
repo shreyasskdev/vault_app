@@ -268,9 +268,9 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                     iconColor: theme.colorScheme.primary,
                     title: "Theft protection",
                     subtitle: "Theft protection with gyrosope",
-                    value: ref.watch(SettingsModelProvider).TheftProtection,
+                    value: ref.watch(settingsModelProvider).theftProtection,
                     onChanged: (value) => {
-                      ref.read(SettingsModelProvider).toggleTheftProtection()
+                      ref.read(settingsModelProvider).toggleTheftProtection()
                     },
                     divider: false,
                   ),

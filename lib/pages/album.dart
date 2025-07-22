@@ -333,7 +333,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       body: Stack(
         children: [
           // Conditionally apply the ProgressiveBlurWidget based on settings
-          ref.watch(SettingsModelProvider).advancedTextures
+          ref.watch(settingsModelProvider).advancedTextures
               ? ProgressiveBlurWidget(
                   linearGradientBlur: const LinearGradientBlur(
                     values: [1, 0],

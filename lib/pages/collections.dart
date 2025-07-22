@@ -546,7 +546,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
         body: Stack(
           children: [
             // The GridView is the primary interactive layer
-            ref.watch(SettingsModelProvider).advancedTextures
+            ref.watch(settingsModelProvider).advancedTextures
                 ? ProgressiveBlurWidget(
                     linearGradientBlur: const LinearGradientBlur(
                       values: [1, 0],

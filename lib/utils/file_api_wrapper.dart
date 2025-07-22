@@ -50,7 +50,7 @@ mixin FileApiWrapper {
   }
 
   Future<Uint8List> getFileWrapper(String path, WidgetRef ref) async {
-    final imageCache = ref.read(ImageCacheProvider);
+    final imageCache = ref.read(imageCacheProvider);
     final cachedImage = imageCache.cachedImage[path];
 
     if (cachedImage != null) {
@@ -63,7 +63,7 @@ mixin FileApiWrapper {
   }
 
   Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
-    final imageCache = ref.read(ImageCacheProvider);
+    final imageCache = ref.read(imageCacheProvider);
     final cachedImage = imageCache.cachedThumbImage[path];
 
     if (cachedImage != null) {

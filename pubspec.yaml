@@ -52,6 +52,7 @@ dependencies:
 
   # provider: ^6.1.2
   flutter_riverpod: ^2.6.1
+  shared_preferences: ^2.5.3
 
   rust_lib_vault:
     path: rust_builder

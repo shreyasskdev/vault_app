@@ -25,22 +25,22 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final settings = ref.watch(SettingsModelProvider);
+    final settings = ref.watch(settingsModelProvider);
 
     // Remove previous listener to avoid duplicates
     settings.removeListener(_onSettingsChanged);
     settings.addListener(_onSettingsChanged);
 
-    if (settings.TheftProtection) {
+    if (settings.theftProtection) {
       _startListening();
     }
   }
 
   void _onSettingsChanged() {
-    final settings = ref.read(SettingsModelProvider);
+    final settings = ref.read(settingsModelProvider);
     ;
 
-    if (settings.TheftProtection) {
+    if (settings.theftProtection) {
       _startListening();
     } else {
       _stopListening();
@@ -99,7 +99,7 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
 
   @override
   void dispose() {
-    final settings = ref.read(SettingsModelProvider);
+    final settings = ref.read(settingsModelProvider);
     settings.removeListener(_onSettingsChanged);
     _stopListening();
     super.dispose();

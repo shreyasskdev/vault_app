@@ -59,7 +59,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final authStatus = ref.watch(passwordExistsProvider);
-    final settings = ref.watch(SettingsModelProvider);
+    final settings = ref.watch(settingsModelProvider);
 
     return authStatus.when(
       loading: () {

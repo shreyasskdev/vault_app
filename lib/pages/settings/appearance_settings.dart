@@ -52,9 +52,10 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
                     iconColor: theme.colorScheme.primary,
                     title: "Dark Mode",
                     subtitle: "Toggle Dark mode",
-                    value: ref.watch(SettingsModelProvider).darkmode,
-                    onChanged: (value) =>
-                        {ref.read(SettingsModelProvider).toggleDarkmode()},
+                    value: ref.watch(settingsModelProvider).darkmode,
+                    onChanged: (value) {
+                      ref.read(settingsModelProvider).toggleDarkMode();
+                    },
                     divider: true,
                   ),
                   MenuItemToggle(
@@ -64,9 +65,9 @@ class _AppearanceSettingsState extends ConsumerState<AppearanceSettings> {
                     iconColor: theme.colorScheme.primary,
                     title: "Advanced Textures",
                     subtitle: "Toggle advanced visual effects",
-                    value: ref.watch(SettingsModelProvider).advancedTextures,
+                    value: ref.watch(settingsModelProvider).advancedTextures,
                     onChanged: (value) => {
-                      ref.read(SettingsModelProvider).toggleAdvancedTextures()
+                      ref.read(settingsModelProvider).toggleAdvancedTextures()
                     },
                     divider: false,
                   ),

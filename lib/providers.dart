@@ -1,32 +1,57 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsModel extends ChangeNotifier {
+  // private vars with default values
   bool _darkMode = true;
-  bool _TheftProtection = true;
+  bool _theftProtection = false;
   bool _advancedTextures = false;
 
+  // Getter for private variables
   bool get darkmode => _darkMode;
-  bool get TheftProtection => _TheftProtection;
+  bool get theftProtection => _theftProtection;
   bool get advancedTextures => _advancedTextures;
 
-  void toggleDarkmode() {
+  // Constructor that triggers loading the settings
+  SettingsModel() {
+    loadSettings();
+  }
+
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Loads stored data
+    _darkMode = prefs.getBool('darkMode') ?? true;
+    _theftProtection = prefs.getBool('theftProtection') ?? true;
+    _advancedTextures = prefs.getBool('advancedTextures') ?? false;
+
+    notifyListeners();
+  }
+
+  Future<void> toggleDarkMode() async {
+    final prefs = await SharedPreferences.getInstance();
     _darkMode = !_darkMode;
+    await prefs.setBool('darkMode', _darkMode);
     notifyListeners();
   }
 
-  void toggleTheftProtection() {
-    _TheftProtection = !_TheftProtection;
+  Future<void> toggleTheftProtection() async {
+    final prefs = await SharedPreferences.getInstance();
+    _theftProtection = !_theftProtection;
+    await prefs.setBool('theftProtection', _theftProtection);
     notifyListeners();
   }
 
-  void toggleAdvancedTextures() {
+  Future<void> toggleAdvancedTextures() async {
+    final prefs = await SharedPreferences.getInstance();
     _advancedTextures = !_advancedTextures;
+    await prefs.setBool('advancedTextures', _advancedTextures);
     notifyListeners();
   }
 }
 
-final SettingsModelProvider = ChangeNotifierProvider<SettingsModel>((ref) {
+final settingsModelProvider = ChangeNotifierProvider<SettingsModel>((ref) {
   return SettingsModel();
 });
 
@@ -58,6 +83,6 @@ class ImageCache extends ChangeNotifier {
   }
 }
 
-final ImageCacheProvider = ChangeNotifierProvider<ImageCache>((ref) {
+final imageCacheProvider = ChangeNotifierProvider<ImageCache>((ref) {
   return ImageCache();
 });
