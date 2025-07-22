@@ -131,8 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
     ],
     redirect: (context, state) {
-      final passwordExistsFuture = ref.watch(passwordExistsProvider);
-      final isAuthenticated = ref.watch(isAuthenticatedProvider);
+      final passwordExistsFuture = ref.read(passwordExistsProvider);
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
       final location = state.matchedLocation;
 
       // While checking if a password exists, don't redirect.

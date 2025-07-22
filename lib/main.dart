@@ -5,6 +5,8 @@ import 'package:vault/providers.dart';
 import 'package:vault/router_provider.dart';
 import 'themes/dark_theme.dart';
 import 'themes/light_theme.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 import 'package:vault/src/rust/frb_generated.dart';
 
@@ -36,23 +38,25 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   Future<void> setOptimalDisplayMode() async {
-    try {
-      final List<DisplayMode> supported = await FlutterDisplayMode.supported;
-      final DisplayMode active = await FlutterDisplayMode.active;
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      try {
+        final List<DisplayMode> supported = await FlutterDisplayMode.supported;
+        final DisplayMode active = await FlutterDisplayMode.active;
 
-      final List<DisplayMode> sameResolution = supported
-          .where((DisplayMode m) =>
-              m.width == active.width && m.height == active.height)
-          .toList()
-        ..sort((DisplayMode a, DisplayMode b) =>
-            b.refreshRate.compareTo(a.refreshRate));
+        final List<DisplayMode> sameResolution = supported
+            .where((DisplayMode m) =>
+                m.width == active.width && m.height == active.height)
+            .toList()
+          ..sort((DisplayMode a, DisplayMode b) =>
+              b.refreshRate.compareTo(a.refreshRate));
 
-      final DisplayMode mostOptimalMode =
-          sameResolution.isNotEmpty ? sameResolution.first : active;
+        final DisplayMode mostOptimalMode =
+            sameResolution.isNotEmpty ? sameResolution.first : active;
 
-      await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
-    } catch (e) {
-      debugPrint("Error setting display mode: $e");
+        await FlutterDisplayMode.setPreferredMode(mostOptimalMode);
+      } catch (e) {
+        debugPrint("Error setting display mode: $e");
+      }
     }
   }
 

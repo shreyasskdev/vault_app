@@ -12,6 +12,8 @@ import 'package:vault/moiton_detector.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/widget/touchable.dart';
 import 'package:progressive_blur/progressive_blur.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -261,39 +263,43 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
   @override
   Widget build(BuildContext context) {
     if (directories == null) {
-      return MotionDetector(
-        child: Scaffold(
-          appBar: AppBar(
-            automaticallyImplyLeading: false,
-            title: const Text("Vault",
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            centerTitle: true,
-            actions: <Widget>[
-              TouchableOpacity(
-                onPressed: () {
-                  createNewAlbum(context);
-                  HapticFeedback.heavyImpact();
-                },
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                  child: Icon(Icons.add_circle_outline_rounded, size: 25),
-                ),
+      final loadingScaffold = Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text("Vault",
+              style: TextStyle(fontWeight: FontWeight.w600)),
+          centerTitle: true,
+          actions: <Widget>[
+            TouchableOpacity(
+              onPressed: () {
+                createNewAlbum(context);
+                HapticFeedback.heavyImpact();
+              },
+              child: const Padding(
+                padding:
+                    EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+                child: Icon(Icons.add_circle_outline_rounded, size: 25),
               ),
-            ],
-          ),
-          body: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CupertinoActivityIndicator(),
-                SizedBox(height: 8),
-                Text("Loading...", style: TextStyle(fontSize: 16)),
-              ],
             ),
+          ],
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CupertinoActivityIndicator(),
+              SizedBox(height: 8),
+              Text("Loading...", style: TextStyle(fontSize: 16)),
+            ],
           ),
         ),
       );
+
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        return MotionDetector(child: loadingScaffold);
+      } else {
+        return loadingScaffold;
+      }
     }
 
     void toggleSelectionMode(int index) {
@@ -500,106 +506,97 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       },
     );
 
-    return MotionDetector(
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: _isSelectionMode
-              ? IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: exitSelectionMode,
-                )
-              : IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () {
-                    context.push("/settings");
-                  },
-                ),
-          title: _isSelectionMode
-              ? Text("${_selectedIndices.length} selected")
-              : const Text("Vault",
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-          centerTitle: true,
-          actions: <Widget>[
-            if (_isSelectionMode)
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: deleteSelectedAlbums,
+    final mainScaffold = Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: _isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: exitSelectionMode,
               )
-            else
-              TouchableOpacity(
+            : IconButton(
+                icon: const Icon(Icons.settings_outlined),
                 onPressed: () {
-                  createNewAlbum(context);
-                  HapticFeedback.heavyImpact();
+                  context.push("/settings");
                 },
-                child: const Padding(
-                  padding:
-                      EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                  child: Icon(Icons.add_circle_outline_rounded, size: 25),
-                ),
               ),
-          ],
-          forceMaterialTransparency: true,
-        ),
-        body: Stack(
-          children: [
-            // The GridView is the primary interactive layer
-            ref.watch(settingsModelProvider).advancedTextures
-                ? ProgressiveBlurWidget(
-                    linearGradientBlur: const LinearGradientBlur(
-                      values: [1, 0],
-                      stops: [0, 0.2],
-                      start: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    sigma: _isGradientVisible ? 24.0 : 0,
-                    blurTextureDimensions: 128,
-                    child: gridView)
-                : gridView,
+        title: _isSelectionMode
+            ? Text("${_selectedIndices.length} selected")
+            : const Text("Vault",
+                style: TextStyle(fontWeight: FontWeight.w600)),
+        centerTitle: true,
+        actions: <Widget>[
+          if (_isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: deleteSelectedAlbums,
+            )
+          else
+            TouchableOpacity(
+              onPressed: () {
+                createNewAlbum(context);
+                HapticFeedback.heavyImpact();
+              },
+              child: const Padding(
+                padding:
+                    EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
+                child: Icon(Icons.add_circle_outline_rounded, size: 25),
+              ),
+            ),
+        ],
+        forceMaterialTransparency: true,
+      ),
+      body: Stack(
+        children: [
+          // The GridView is the primary interactive layer
+          ref.watch(settingsModelProvider).advancedTextures
+              ? ProgressiveBlurWidget(
+                  linearGradientBlur: const LinearGradientBlur(
+                    values: [1, 0],
+                    stops: [0, 0.2],
+                    start: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  sigma: _isGradientVisible ? 24.0 : 0,
+                  blurTextureDimensions: 128,
+                  child: gridView)
+              : gridView,
 
-            // This is the scroll-based animated gradient overlay
-            // ref.watch(SettingsModelProvider).advancedTextures
+          // This is the scroll-based animated gradient overlay
+          // ref.watch(SettingsModelProvider).advancedTextures
 
-            IgnorePointer(
-              // 7. Wrap the gradient in AnimatedOpacity for the fade effect.
-              child: AnimatedOpacity(
-                opacity: _isGradientVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.fastEaseInToSlowEaseOut,
-                child: Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    // border: Border.all(color: Colors.red, width: 1),
-                    gradient: SmoothGradient(
-                      from: Theme.of(context).colorScheme.surface,
-                      // from: Colors.black,
-                      to: Theme.of(context).colorScheme.surface.withAlpha(0),
-                      curve: const Cubic(.05, .26, 1, .55),
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+          IgnorePointer(
+            // 7. Wrap the gradient in AnimatedOpacity for the fade effect.
+            child: AnimatedOpacity(
+              opacity: _isGradientVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.fastEaseInToSlowEaseOut,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  // border: Border.all(color: Colors.red, width: 1),
+                  gradient: SmoothGradient(
+                    from: Theme.of(context).colorScheme.surface,
+                    // from: Colors.black,
+                    to: Theme.of(context).colorScheme.surface.withAlpha(0),
+                    curve: const Cubic(.05, .26, 1, .55),
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
               ),
             ),
-
-            // const ProgressiveBlurWidget(
-            //   // tintColor: _prominentColor ?? Colors.black.withValues(alpha: 0.5),
-            //   linearGradientBlur: const LinearGradientBlur(
-            //     values: [0, 1],
-            //     stops: [0.5, 0.8],
-            //     start: Alignment.topCenter,
-            //     end: Alignment.bottomCenter,
-            //   ),
-            //   sigma: 24.0,
-            //   blurTextureDimensions: 128,
-            //   child: Text("hello"),
-            // ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      return MotionDetector(child: mainScaffold);
+    } else {
+      return mainScaffold;
+    }
   }
 }

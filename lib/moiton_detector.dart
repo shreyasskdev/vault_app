@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:local_auth/local_auth.dart';
 import 'dart:async';
 
+import 'package:vault/router_provider.dart';
 import 'package:vault/providers.dart';
 
 class MotionDetector extends ConsumerStatefulWidget {
@@ -13,6 +13,7 @@ class MotionDetector extends ConsumerStatefulWidget {
   const MotionDetector({super.key, required this.child});
 
   @override
+  // ignore: library_private_types_in_public_api
   _MotionDetectorState createState() => _MotionDetectorState();
 }
 
@@ -38,7 +39,6 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
 
   void _onSettingsChanged() {
     final settings = ref.read(settingsModelProvider);
-    ;
 
     if (settings.theftProtection) {
       _startListening();
@@ -55,8 +55,9 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
 
       if (intensity > (_threshold * 4)) {
         if (mounted) {
-          _stopListening();
-          context.pushReplacement("/");
+          // _stopListening();
+          // context.pushReplacement("/");
+          _triggerLogout();
         }
       } else if (intensity > (_threshold * 2)) {
         _authenticateWithBiometrics();
@@ -67,6 +68,15 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
   void _stopListening() {
     _gyroSubscription?.cancel();
     _gyroSubscription = null;
+  }
+
+  void _triggerLogout() {
+    // if (mounted) {
+    _stopListening();
+    ref.read(isAuthenticatedProvider.notifier).state = false;
+
+    // context.pushReplacement("/");
+    // }
   }
 
   Future<void> _authenticateWithBiometrics() async {
@@ -83,15 +93,11 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
       if (didAuthenticate) {
         // Authentication succeeded
       } else {
-        if (mounted) {
-          context.pushReplacement("/");
-        }
+        _triggerLogout();
       }
     } catch (e) {
       debugPrint("Authentication error: $e");
-      if (mounted) {
-        context.pushReplacement("/");
-      }
+      _triggerLogout();
     } finally {
       _isAuthenticating = false;
     }
