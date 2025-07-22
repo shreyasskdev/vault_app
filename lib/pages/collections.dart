@@ -583,7 +583,10 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 decoration: BoxDecoration(
                   // border: Border.all(color: Colors.red, width: 1),
                   gradient: SmoothGradient(
-                    from: Theme.of(context).colorScheme.surface,
+                    from: Theme.of(context).colorScheme.surface.withAlpha(
+                        !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                            ? 255
+                            : 220),
                     // from: Colors.black,
                     to: Theme.of(context).colorScheme.surface.withAlpha(0),
                     curve: const Cubic(.05, .26, 1, .55),

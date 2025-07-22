@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
@@ -356,7 +357,10 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                 height: 200,
                 decoration: BoxDecoration(
                   gradient: SmoothGradient(
-                    from: Theme.of(context).colorScheme.surface,
+                    from: Theme.of(context).colorScheme.surface.withAlpha(
+                        !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                            ? 255
+                            : 220),
                     to: Theme.of(context).colorScheme.surface.withAlpha(0),
                     curve: const Cubic(.05, .26, 1, .55),
                     begin: Alignment.topCenter,
