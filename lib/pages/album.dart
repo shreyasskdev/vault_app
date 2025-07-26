@@ -1,18 +1,20 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:progressive_blur/progressive_blur.dart';
-import 'package:vault/providers.dart';
-import 'package:vault/widget/touchable.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
-
+import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
+import 'package:vault/widget/touchable.dart';
+
+import 'photo.dart';
 
 class AlbumPage extends ConsumerStatefulWidget {
   final String name;
@@ -30,26 +32,21 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
   bool _isSelectionMode = false;
   final Set<int> _selectedIndices = {};
 
-  // ScrollController to monitor the GridView's scroll position.
   late final ScrollController _scrollController;
-  // Boolean to track if the gradient/blur should be visible.
   bool _isGradientVisible = false;
+
+  final Map<int, Uint8List> _thumbnailCache = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize the ScrollController and add a listener to it.
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
-    getImages();
+    _initializeAndLoadFiles();
   }
 
-  // This listener function is called every time the user scrolls.
   void _scrollListener() {
-    // Check if the user has scrolled down from the top.
     final bool shouldBeVisible = _scrollController.offset > 0;
-    // Only call setState if the visibility state actually needs to change.
-    // This prevents unnecessary rebuilds on every scroll tick.
     if (shouldBeVisible != _isGradientVisible) {
       setState(() {
         _isGradientVisible = shouldBeVisible;
@@ -57,12 +54,42 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
   }
 
-  // It's crucial to dispose of the controller to prevent memory leaks.
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _initializeAndLoadFiles() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    Directory appDocDir = await getApplicationDocumentsDirectory();
+    photoDirectoryPath = '${appDocDir.path}/Collections/${widget.name}';
+
+    final imageList = await getImagesWrapper(photoDirectoryPath);
+    if (mounted) {
+      setState(() {
+        files = sortMapToList(imageList);
+      });
+    }
+  }
+
+  Future<void> _loadThumbnailAtIndex(int index) async {
+    if (_thumbnailCache.containsKey(index) || files.isEmpty) return;
+
+    try {
+      final imagePath = "$photoDirectoryPath/${files[index].keys.first}";
+      final imageData = await getFileThumbWrapper(imagePath, ref);
+
+      if (mounted && !_thumbnailCache.containsKey(index)) {
+        setState(() {
+          _thumbnailCache[index] = Uint8List.fromList(imageData);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading thumbnail for index $index: $e");
+    }
   }
 
   Future getImageFromGallery() async {
@@ -83,7 +110,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
 
         final bytes = await image?.readAsBytes();
         if (Platform.isAndroid) {
-          await File(image!.path).delete(); // Delete cached file
+          await File(image!.path).delete();
         }
         final Uint8List uint8list = Uint8List.fromList(bytes!);
 
@@ -91,41 +118,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       } catch (e) {
         debugPrint("Error processing image $i: $e");
       }
-      getImages();
     }
-  }
-
-  void getImages() async {
-    WidgetsFlutterBinding.ensureInitialized();
-
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    photoDirectoryPath = '${appDocDir.path}/Collections/${widget.name}';
-
-    await getImagesWrapper(photoDirectoryPath).then((value) {
-      setState(() {
-        files = sortMapToList(value);
-      });
-    });
-  }
-
-  Future<Widget> chainedAsyncOperations(index) async {
-    String imagePath = "$photoDirectoryPath/${files[index].keys.first}";
-    final imageData = await (getFileThumbWrapper(imagePath, ref));
-
-    return Image.memory(
-      gaplessPlayback: true,
-      Uint8List.fromList(imageData),
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint("Vault error: INFO: $error");
-        return Container(
-          color: const Color.fromARGB(255, 14, 14, 14),
-          child: const Center(
-            child: Text("Error"),
-          ),
-        );
-      },
-    );
+    _initializeAndLoadFiles();
   }
 
   void _toggleSelectionMode(int index) {
@@ -158,7 +152,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
   }
 
   Future<void> _deleteSelectedPhotos() async {
-    // Sort indices in descending order to avoid index shifting
     final sortedIndices = _selectedIndices.toList()
       ..sort((a, b) => b.compareTo(a));
 
@@ -171,12 +164,11 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
 
     _exitSelectionMode();
-    getImages();
+    _initializeAndLoadFiles();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Calculate the total height needed for top padding.
     final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
 
     final Widget gridView = GridView.builder(
@@ -199,6 +191,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       itemCount: files.length,
       itemBuilder: (BuildContext context, int index) {
         final isSelected = _selectedIndices.contains(index);
+        final thumbnailData = _thumbnailCache[index];
 
         return GestureDetector(
           onTap: () {
@@ -207,7 +200,17 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
             } else {
               final String imageUrl =
                   Uri.encodeQueryComponent(photoDirectoryPath);
-              context.push("/photo/$imageUrl/$index/${files.length}");
+
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => PhotoView(
+                    url: Uri.decodeQueryComponent(imageUrl),
+                    index: index,
+                    count: files.length,
+                    initialThumbnail: thumbnailData,
+                  ),
+                ),
+              );
             }
           },
           onLongPress: () {
@@ -219,39 +222,24 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
             tag: index,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: isSelected ? Colors.white : Colors.black,
-                  width: isSelected ? 3 : 0,
-                ),
-              ),
               child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  AspectRatio(
-                    aspectRatio: 1 / 1,
-                    child: FutureBuilder<Widget>(
-                      future: chainedAsyncOperations(index),
-                      builder: (context, snapshot) {
-                        Widget child;
-                        if (snapshot.hasData) {
-                          child = SizedBox.expand(child: snapshot.data!);
-                        } else {
-                          child = BlurHash(hash: files[index].values.last.$1);
-                        }
-                        return AnimatedSwitcher(
-                          transitionBuilder:
-                              (Widget child, Animation<double> animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                          duration: const Duration(milliseconds: 200),
-                          child: child,
-                        );
+                  if (thumbnailData != null)
+                    Image.memory(
+                      thumbnailData,
+                      gaplessPlayback: true,
+                      fit: BoxFit.cover,
+                    )
+                  else ...[
+                    BlurHash(hash: files[index].values.first.$1),
+                    Builder(
+                      builder: (context) {
+                        _loadThumbnailAtIndex(index);
+                        return const SizedBox.shrink();
                       },
                     ),
-                  ),
+                  ],
                   if (_isSelectionMode)
                     Positioned(
                       top: 10,
@@ -263,11 +251,11 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                           shape: BoxShape.circle,
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.white.withOpacity(0.8),
+                              : Colors.white.withAlpha(204),
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : Colors.grey.withOpacity(0.5),
+                                : Colors.grey.withAlpha(128),
                             width: 2,
                           ),
                         ),
@@ -333,7 +321,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       ),
       body: Stack(
         children: [
-          // Conditionally apply the ProgressiveBlurWidget based on settings
           ref.watch(settingsModelProvider).advancedTextures
               ? ProgressiveBlurWidget(
                   linearGradientBlur: const LinearGradientBlur(
@@ -346,8 +333,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                   blurTextureDimensions: 128,
                   child: gridView)
               : gridView,
-
-          // This is the decorative gradient layer that fades in on scroll.
           IgnorePointer(
             child: AnimatedOpacity(
               opacity: _isGradientVisible ? 1.0 : 0.0,
