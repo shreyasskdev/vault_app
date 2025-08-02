@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:isolate_pool_2/isolate_pool_2.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/src/rust/api/file.dart' as file_api;
 import 'package:vault/src/rust/frb_generated.dart';
@@ -49,15 +50,39 @@ mixin FileApiWrapper {
     }
   }
 
+  // Future<Uint8List> getFileWrapper(String path, WidgetRef ref) async {
+  //   final imageCache = ref.read(imageCacheProvider);
+  //   final cachedImage = imageCache.cachedImage[path];
+
+  //   if (cachedImage != null) {
+  //     return cachedImage;
+  //   }
+
+  //   final data = await compute(_isolateGetFile, path);
+  //   imageCache.addImage(path, data);
+  //   return data;
+  // }
+
+  // Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
+  //   final imageCache = ref.read(imageCacheProvider);
+  //   final cachedImage = imageCache.cachedThumbImage[path];
+
+  //   if (cachedImage != null) {
+  //     return cachedImage;
+  //   }
+  //   final data = await compute(_isolateGetFileThumb, path);
+  //   imageCache.addThumbImage(path, data);
+  //   return data;
+  // }
+
   Future<Uint8List> getFileWrapper(String path, WidgetRef ref) async {
     final imageCache = ref.read(imageCacheProvider);
     final cachedImage = imageCache.cachedImage[path];
+    if (cachedImage != null) return cachedImage;
 
-    if (cachedImage != null) {
-      return cachedImage;
-    }
+    final pool = await ref.read(isolatePoolProvider.future);
+    final data = await pool.scheduleJob(GetFileJob(path));
 
-    final data = await compute(_isolateGetFile, path);
     imageCache.addImage(path, data);
     return data;
   }
@@ -65,11 +90,11 @@ mixin FileApiWrapper {
   Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
     final imageCache = ref.read(imageCacheProvider);
     final cachedImage = imageCache.cachedThumbImage[path];
+    if (cachedImage != null) return cachedImage;
 
-    if (cachedImage != null) {
-      return cachedImage;
-    }
-    final data = await compute(_isolateGetFileThumb, path);
+    final pool = await ref.read(isolatePoolProvider.future);
+    final data = await pool.scheduleJob(GetFileThumbJob(path));
+
     imageCache.addThumbImage(path, data);
     return data;
   }
@@ -155,28 +180,90 @@ mixin FileApiWrapper {
   }
 }
 
-Future<Uint8List> _isolateGetFile(String path) async {
-  await RustLib.init();
+// Future<Uint8List> _isolateGetFile(String path) async {
+//   await RustLib.init();
 
-  Uint8List value =
-      await file_api.getFile(path: path).then((value) => value).catchError((e) {
-    debugPrint(
-        "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
-    return Uint8List.fromList([]);
-  });
-  return value;
+//   Uint8List value =
+//       await file_api.getFile(path: path).then((value) => value).catchError((e) {
+//     debugPrint(
+//         "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
+//     return Uint8List.fromList([]);
+//   });
+//   return value;
+// }
+
+// Future<Uint8List> _isolateGetFileThumb(String path) async {
+//   await RustLib.init();
+
+//   Uint8List value = await file_api
+//       .getFileThumb(path: path)
+//       .then((value) => value)
+//       .catchError((e) {
+//     debugPrint(
+//         "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
+//     return Uint8List.fromList([]);
+//   });
+//   return value;
+// }
+
+////////////////////////////////////////////////////////////////////////////
+
+@pragma('vm:isolate-local')
+var _isRustInitialized = false;
+
+// An abstract base class to handle our shared initialization logic.
+abstract class BaseFileJob<T> extends PooledJob<T> {
+  Future<void> initializeRust() async {
+    if (!_isRustInitialized) {
+      try {
+        await RustLib.init();
+        _isRustInitialized = true;
+      } catch (e) {
+        // If init fails, log it. The jobs will likely fail after this.
+        debugPrint("FATAL: RustLib.init() failed in isolate: $e");
+      }
+    }
+  }
 }
 
-Future<Uint8List> _isolateGetFileThumb(String path) async {
-  await RustLib.init();
+class GetFileJob extends BaseFileJob<Uint8List> {
+  final String path;
+  GetFileJob(this.path);
 
-  Uint8List value = await file_api
-      .getFileThumb(path: path)
-      .then((value) => value)
-      .catchError((e) {
-    debugPrint(
-        "Vault error: WARN: Encryption error (wrong password): ${e.toString()}");
-    return Uint8List.fromList([]);
-  });
-  return value;
+  @override
+  Future<Uint8List> job() async {
+    await initializeRust();
+    if (!_isRustInitialized) {
+      return Uint8List(0);
+    }
+
+    try {
+      final value = await file_api.getFile(path: path);
+      return value;
+    } catch (e) {
+      debugPrint("Vault error (getFile job): ${e.toString()}");
+      return Uint8List(0);
+    }
+  }
+}
+
+class GetFileThumbJob extends BaseFileJob<Uint8List> {
+  final String path;
+  GetFileThumbJob(this.path);
+
+  @override
+  Future<Uint8List> job() async {
+    await initializeRust();
+    if (!_isRustInitialized) {
+      return Uint8List(0);
+    }
+
+    try {
+      final value = await file_api.getFileThumb(path: path);
+      return value;
+    } catch (e) {
+      debugPrint("Vault error (getFileThumb job): ${e.toString()}");
+      return Uint8List(0);
+    }
+  }
 }

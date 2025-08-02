@@ -16,9 +16,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
   await ProgressiveBlurWidget.precache();
+  // ProgressiveBlurWidget.precache();
+
+  // PRE-WARM THE ISOLATE POOL
+  final container = ProviderContainer();
+  container.read(isolatePoolProvider);
+
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const MyApp(),
     ),
   );
 }

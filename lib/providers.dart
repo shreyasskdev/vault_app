@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isolate_pool_2/isolate_pool_2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsModel extends ChangeNotifier {
@@ -85,4 +88,13 @@ class ImageCache extends ChangeNotifier {
 
 final imageCacheProvider = ChangeNotifierProvider<ImageCache>((ref) {
   return ImageCache();
+});
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+final isolatePoolProvider = FutureProvider<IsolatePool>((ref) async {
+  final pool = IsolatePool(Platform.numberOfProcessors - 1);
+  await pool.start();
+  ref.onDispose(() => pool.stop());
+  return pool;
 });

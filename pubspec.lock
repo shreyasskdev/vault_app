@@ -524,6 +524,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  isolate_pool_2:
+    dependency: "direct main"
+    description:
+      name: isolate_pool_2
+      sha256: "28ca787a0fe36c29877a349448c41df3b6c2bef9607de2e9df4b6427b1ba41ed"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.8"
   js:
     dependency: transitive
     description:

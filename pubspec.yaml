@@ -62,6 +62,8 @@ dependencies:
   smooth_gradient: ^0.1.0
   progressive_blur: ^0.0.2
 
+  isolate_pool_2: ^1.0.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

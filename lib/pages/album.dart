@@ -98,6 +98,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String directory = '${appDocDir.path}/Collections';
 
+    // final List<XFile?> images = await ImagePicker().pickMultipleMedia();
     final List<XFile?> images = await ImagePicker().pickMultiImage();
 
     if (images.isEmpty) {
