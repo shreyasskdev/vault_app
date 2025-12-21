@@ -229,18 +229,16 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                 final String imageUrl =
                     Uri.encodeQueryComponent(photoDirectoryPath);
 
-                Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (context) => PhotoView(
-                          url: Uri.decodeQueryComponent(imageUrl),
-                          index: index,
-                          count: files.length,
-                          initialThumbnail: thumbnailData,
-                        ),
-                      ),
-                    )
-                    .then((t) => {_initializeAndLoadFiles()});
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PhotoView(
+                      url: Uri.decodeQueryComponent(imageUrl),
+                      index: index,
+                      count: files.length,
+                      initialThumbnail: thumbnailData,
+                    ),
+                  ),
+                );
               }
             },
             onLongPress: () {
