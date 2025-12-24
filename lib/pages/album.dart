@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show MaterialRectArcTween;
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -251,6 +251,9 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
             },
             child: Hero(
               tag: index,
+              createRectTween: (begin, end) {
+                return MaterialRectArcTween(begin: begin, end: end);
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 child: Stack(

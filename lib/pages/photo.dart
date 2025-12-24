@@ -4,7 +4,9 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart'; // Required for SystemChrome
+import 'package:flutter/material.dart'
+    show MaterialRectArcTween; // Added Colors
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -39,11 +41,16 @@ class PhotoView extends ConsumerStatefulWidget {
   ConsumerState<PhotoView> createState() => _PhotoViewState();
 }
 
+// Added SingleTickerProviderStateMixin for the AnimationController
 class _PhotoViewState extends ConsumerState<PhotoView>
-    with fileapi.FileApiWrapper {
+    with fileapi.FileApiWrapper, SingleTickerProviderStateMixin {
   late final PageController pageController;
-  List<Map<String, (String, double)>>? imageValue;
 
+  // Animation Controller for unified, smooth transitions
+  late final AnimationController _animationController;
+  late final Animation<double> _animationCurve;
+
+  List<Map<String, (String, double)>>? imageValue;
   final Map<int, Uint8List> _thumbnailCache = {};
   final Map<int, Uint8List> _fullImageCache = {};
 
@@ -57,6 +64,18 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     _currentPage = widget.index;
     pageController = PageController(initialPage: widget.index);
 
+    // Initialize the explicit animation controller
+    _animationController = AnimationController(
+      vsync: this,
+      duration:
+          const Duration(milliseconds: 500), // Slightly longer for "Linux" feel
+    );
+    _animationCurve = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack, // Very smooth deceleration
+    );
+    _animationController.value = 1.0; // Start in the 'shown' state
+
     if (widget.initialThumbnail != null) {
       _thumbnailCache[widget.index] = widget.initialThumbnail!;
     }
@@ -64,29 +83,43 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     _loadImageList();
     _resetControlsTimer();
 
-    // Set status bar to light/transparent for the photo viewer
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
   }
 
   @override
   void dispose() {
     _controlsTimer?.cancel();
+    _animationController.dispose(); // Dispose the controller
     pageController.dispose();
     super.dispose();
   }
 
   void _toggleControls() {
     _controlsTimer?.cancel();
-    setState(() => _showControls = !_showControls);
-    if (_showControls) _resetControlsTimer();
+    if (_showControls) {
+      _animationController.reverse();
+      _showControls = false;
+    } else {
+      _animationController.forward();
+      _showControls = true;
+      _resetControlsTimer();
+    }
+    setState(
+        () {}); // Still needed to trigger visibility logic for IgnorePointer
   }
 
   void _resetControlsTimer() {
     _controlsTimer?.cancel();
     if (!mounted) return;
-    if (!_showControls) setState(() => _showControls = true);
+    if (!_showControls) {
+      _animationController.forward();
+      setState(() => _showControls = true);
+    }
     _controlsTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _showControls = false);
+      if (mounted && _showControls) {
+        _animationController.reverse();
+        setState(() => _showControls = false);
+      }
     });
   }
 
@@ -243,7 +276,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
         Platform.isLinux ||
         Platform.isWindows ||
         Platform.isMacOS;
-    final topPadding = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final useAdvancedTextures =
         ref.watch(settingsModelProvider).advancedTextures;
@@ -252,7 +284,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       scrollPhysics: const BouncingScrollPhysics(),
       gaplessPlayback: true,
       onPageChanged: _onPageChanged,
-      // 1. Force the gallery background to be black
       backgroundDecoration: BoxDecoration(
         color: CupertinoTheme.of(context).scaffoldBackgroundColor,
       ),
@@ -261,7 +292,12 @@ class _PhotoViewState extends ConsumerState<PhotoView>
         initialScale: PhotoViewComputedScale.contained,
         minScale: PhotoViewComputedScale.contained * 0.8,
         maxScale: PhotoViewComputedScale.contained * 3.0,
-        heroAttributes: PhotoViewHeroAttributes(tag: index),
+        heroAttributes: PhotoViewHeroAttributes(
+          tag: index,
+          createRectTween: (begin, end) {
+            return MaterialRectArcTween(begin: begin, end: end);
+          },
+        ),
         onTapUp: (_, __, ___) => _toggleControls(),
       ),
       itemCount: imageValue?.length ?? widget.count,
@@ -271,7 +307,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     return CupertinoPageScaffold(
       backgroundColor:
           CupertinoTheme.of(context).scaffoldBackgroundColor.withAlpha(0),
-      resizeToAvoidBottomInset: false, // Prevent keyboard or system shifts
+      resizeToAvoidBottomInset: false,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: MouseRegion(
@@ -279,7 +315,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
           child: GestureDetector(
             onTap: _toggleControls,
             child: SizedBox.expand(
-              // 2. Force the stack to fill every available pixel
               child: Stack(
                 children: [
                   // --- LAYER 1: THE IMAGE GALLERY ---
@@ -291,14 +326,20 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                       removeLeft: true,
                       removeRight: true,
                       child: useAdvancedTextures
-                          ? ProgressiveBlurWidget(
-                              linearGradientBlur: const LinearGradientBlur(
-                                values: [1, 0],
-                                stops: [0, 0.25],
-                                start: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
+                          ? AnimatedBuilder(
+                              animation: _animationCurve,
+                              builder: (context, child) =>
+                                  ProgressiveBlurWidget(
+                                linearGradientBlur: const LinearGradientBlur(
+                                  values: [1, 0],
+                                  stops: [0, 0.25],
+                                  start: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                                sigma: _animationCurve.value *
+                                    24.0, // Blur linked to explicit animation
+                                child: child!,
                               ),
-                              sigma: _showControls ? 24.0 : 0,
                               child: gallery,
                             )
                           : gallery,
@@ -311,19 +352,19 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                     top: 0,
                     left: 0,
                     right: 0,
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 300),
-                      opacity: _showControls ? 1.0 : 0.0,
+                    child: FadeTransition(
+                      opacity: _animationCurve,
                       child: IgnorePointer(
                         ignoring: !_showControls,
-                        child: Container(
-                          padding: EdgeInsets.only(top: topPadding),
+                        child: SafeArea(
+                          bottom: false,
                           child: CupertinoNavigationBar(
                             backgroundColor: CupertinoTheme.of(context)
                                 .scaffoldBackgroundColor
                                 .withAlpha(0),
                             border: null,
                             enableBackgroundFilterBlur: false,
+                            padding: EdgeInsetsDirectional.zero,
                             middle: Text(
                               "Photo",
                               style: TextStyle(
@@ -339,37 +380,40 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                   ),
 
                   // --- LAYER 3: DESKTOP NAVIGATION ---
-                  if (isDesktop && _currentPage > 0)
-                    _buildSideNav(isLeft: true, icon: CupertinoIcons.back),
-                  if (isDesktop &&
-                      _currentPage < (imageValue?.length ?? widget.count) - 1)
-                    _buildSideNav(isLeft: false, icon: CupertinoIcons.forward),
+                  if (isDesktop) ...[
+                    if (_currentPage > 0)
+                      _buildSideNav(isLeft: true, icon: CupertinoIcons.back),
+                    if (_currentPage < (imageValue?.length ?? widget.count) - 1)
+                      _buildSideNav(
+                          isLeft: false, icon: CupertinoIcons.forward),
+                  ],
 
                   // --- LAYER 4: BOTTOM PILL ACTION BAR ---
                   Positioned(
                     bottom: bottomInset > 0
                         ? bottomInset
-                        : 30, // Adjust bottom spacing
+                        : 20, // Stabilized bottom padding
                     left: 0,
                     right: 0,
                     child: Center(
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 300),
-                        opacity: _showControls ? 1.0 : 0.0,
-                        curve: Curves.easeOutCubic,
-                        child: AnimatedScale(
-                          duration: const Duration(milliseconds: 400),
-                          scale: _showControls ? 1.0 : 0.7,
-                          curve: Curves.easeOutBack,
-                          child: AnimatedSlide(
-                            duration: const Duration(milliseconds: 400),
-                            offset: _showControls
-                                ? Offset.zero
-                                : const Offset(0, 0.5),
-                            curve: Curves.easeOutBack,
-                            child: _buildBottomPill(context),
-                          ),
-                        ),
+                      child: AnimatedBuilder(
+                        animation: _animationCurve,
+                        builder: (context, child) {
+                          return FadeTransition(
+                            opacity: _animationCurve,
+                            child: Transform.translate(
+                              // Precise slide: 40 pixels down when hidden
+                              offset:
+                                  Offset(0, 40 * (1.0 - _animationCurve.value)),
+                              child: Transform.scale(
+                                // Precise scale: 0.85 when hidden
+                                scale: 0.85 + (0.15 * _animationCurve.value),
+                                child: child,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildBottomPill(context),
                       ),
                     ),
                   ),
@@ -383,10 +427,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   }
 
   Widget _buildTopFade() {
-    return IgnorePointer(
-      child: AnimatedOpacity(
-        opacity: _showControls ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 300),
+    return FadeTransition(
+      opacity: _animationCurve,
+      child: IgnorePointer(
         child: Container(
           height: 180,
           decoration: BoxDecoration(
@@ -452,10 +495,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       right: !isLeft ? 20 : null,
       top: 0,
       bottom: 0,
-      child: Center(
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: _showControls ? 1.0 : 0.0,
+      child: FadeTransition(
+        opacity: _animationCurve,
+        child: Center(
           child: IgnorePointer(
             ignoring: !_showControls,
             child: ClipOval(
