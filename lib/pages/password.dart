@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:vault/router_provider.dart';
@@ -19,6 +17,13 @@ class _PasswordState extends ConsumerState<Password>
   final _controller = TextEditingController();
   String? errorMessage;
   bool _isChecking = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ensures the Unlock button updates its state immediately when typing
+    _controller.addListener(() => setState(() {}));
+  }
 
   void checkPassword() async {
     if (_isChecking || _controller.text.isEmpty) return;
@@ -40,7 +45,7 @@ class _PasswordState extends ConsumerState<Password>
         ref.read(isAuthenticatedProvider.notifier).state = true;
       } else {
         setState(() {
-          errorMessage = "Wrong password";
+          errorMessage = "Incorrect password. Please try again.";
           _controller.clear();
         });
       }
@@ -62,101 +67,158 @@ class _PasswordState extends ConsumerState<Password>
   @override
   Widget build(BuildContext context) {
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    final theme = CupertinoTheme.of(context);
+    final bgColor =
+        CupertinoColors.systemGroupedBackground.resolveFrom(context);
 
+    // --- LOADING STATE ---
     if (isAuthenticated) {
-      return Scaffold(
-        appBar: AppBar(
+      return CupertinoPageScaffold(
+        backgroundColor: bgColor,
+        navigationBar: CupertinoNavigationBar(
           automaticallyImplyLeading: false,
-          title: const Text("Vault",
+          backgroundColor: bgColor.withOpacity(0.8),
+          middle: const Text("Vault",
               style: TextStyle(fontWeight: FontWeight.w600)),
-          centerTitle: true,
-          actions: const <Widget>[
-            Padding(
-              padding:
-                  EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-              child: Icon(Icons.add_circle_outline_rounded, size: 25),
-            ),
-          ],
         ),
-        body: const Center(
+        child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CupertinoActivityIndicator(),
-              SizedBox(height: 8),
-              Text("Loading...", style: TextStyle(fontSize: 16)),
+              CupertinoActivityIndicator(radius: 15),
+              SizedBox(height: 16),
+              Text("Decrypting...",
+                  style: TextStyle(
+                      fontSize: 16, color: CupertinoColors.secondaryLabel)),
             ],
           ),
         ),
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  "Enter your password",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  autofocus: true,
-                  controller: _controller,
-                  enabled: !_isChecking,
-                  obscureText: true,
-                  onSubmitted: (_) => checkPassword(),
-                  onChanged: (_) {
-                    setState(() {
-                      if (errorMessage != null) {
-                        errorMessage = null;
-                      }
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    hintText: "Password",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isChecking || _controller.text.isEmpty
-                        ? null
-                        : checkPassword,
-                    child: _isChecking
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text("Unlock"),
-                  ),
-                ),
-                // Display the error message using a separate Text widget
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16),
-                    child: Text(
-                      errorMessage!,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
+    // --- UNLOCK STATE ---
+    return CupertinoPageScaffold(
+      backgroundColor: bgColor,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // --- HERO ICON ---
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          CupertinoIcons.lock_fill,
+                          size: 70,
+                          color: theme.primaryColor,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      // --- TITLES ---
+                      const Text(
+                        "Unlock Vault",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Enter your password to access\nyour encrypted gallery.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: CupertinoColors.secondaryLabel
+                              .resolveFrom(context),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // --- TEXT FIELD ---
+                      CupertinoTextField(
+                        controller: _controller,
+                        autofocus: true,
+                        obscureText: true,
+                        enabled: !_isChecking,
+                        placeholder: "Password",
+                        padding: const EdgeInsets.all(16),
+                        clearButtonMode: OverlayVisibilityMode.editing,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => checkPassword(),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors
+                              .secondarySystemGroupedBackground
+                              .resolveFrom(context),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: errorMessage != null
+                                ? CupertinoColors.systemRed
+                                : CupertinoColors.separator
+                                    .resolveFrom(context),
+                            width: 1,
+                          ),
+                        ),
+                        onChanged: (_) {
+                          if (errorMessage != null)
+                            setState(() => errorMessage = null);
+                        },
+                      ),
+
+                      // --- ERROR MESSAGE ---
+                      if (errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: CupertinoColors.destructiveRed,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 24),
+
+                      // --- UNLOCK BUTTON ---
+                      SizedBox(
+                        width: double.infinity,
+                        child: CupertinoButton.filled(
+                          borderRadius: BorderRadius.circular(14),
+                          onPressed: _isChecking || _controller.text.isEmpty
+                              ? null
+                              : checkPassword,
+                          child: _isChecking
+                              ? const CupertinoActivityIndicator()
+                              : const Text(
+                                  "Unlock",
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                        ),
+                      ),
+
+                      // Extra space for the keyboard to breathe
+                      const SizedBox(height: 40),
+                    ],
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

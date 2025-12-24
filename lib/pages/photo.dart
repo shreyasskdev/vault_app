@@ -4,7 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Required for SystemChrome
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -12,7 +12,6 @@ import 'package:progressive_blur/progressive_blur.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
-import 'package:vault/widget/touchable.dart';
 
 Future<Image> _decodeImage(Uint8List imageBytes) async {
   return Image.memory(
@@ -64,6 +63,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
 
     _loadImageList();
     _resetControlsTimer();
+
+    // Set status bar to light/transparent for the photo viewer
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
   }
 
   @override
@@ -154,12 +156,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     }
   }
 
-  // --- DELETE LOGIC ---
-
   Future<void> _handleDelete() async {
     if (imageValue == null || imageValue!.isEmpty) return;
 
-    // Show iOS Style Confirmation
     final bool? confirm = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -184,27 +183,19 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       try {
         final fileName = imageValue![_currentPage].keys.first;
         final filePath = "${widget.url}/$fileName";
-
-        // 1. Delete the physical file
         await deleteFileWrapper(filePath);
-
-        // 2. Update Local State
         setState(() {
           imageValue!.removeAt(_currentPage);
-          // Clear caches because indices have shifted
           _thumbnailCache.clear();
           _fullImageCache.clear();
         });
 
-        // 3. Handle Navigation
         if (imageValue!.isEmpty) {
           if (mounted) Navigator.pop(context);
         } else {
-          // If we deleted the last photo, move back one page
           if (_currentPage >= imageValue!.length) {
             _currentPage = imageValue!.length - 1;
           }
-          // Preload the new current/surrounding images
           _preloadImages();
         }
       } catch (e) {
@@ -227,7 +218,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
             return Image.memory(thumbnailBytes,
                 fit: BoxFit.contain, gaplessPlayback: true);
           }
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CupertinoActivityIndicator());
         },
       );
     }
@@ -239,7 +230,11 @@ class _PhotoViewState extends ConsumerState<PhotoView>
 
     _loadThumbnailAtIndex(index);
     _loadFullImageAtIndex(index);
-    return const Center(child: CircularProgressIndicator(color: Colors.white));
+    return Center(
+      child: CupertinoActivityIndicator(
+        color: CupertinoColors.label.resolveFrom(context),
+      ),
+    );
   }
 
   @override
@@ -248,6 +243,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
         Platform.isLinux ||
         Platform.isWindows ||
         Platform.isMacOS;
+    final topPadding = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final useAdvancedTextures =
         ref.watch(settingsModelProvider).advancedTextures;
@@ -256,8 +252,10 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       scrollPhysics: const BouncingScrollPhysics(),
       gaplessPlayback: true,
       onPageChanged: _onPageChanged,
-      backgroundDecoration:
-          BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
+      // 1. Force the gallery background to be black
+      backgroundDecoration: BoxDecoration(
+        color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+      ),
       builder: (context, index) => PhotoViewGalleryPageOptions.customChild(
         child: _buildImageLoader(index),
         initialScale: PhotoViewComputedScale.contained,
@@ -270,99 +268,114 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       pageController: pageController,
     );
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: _showControls ? 1.0 : 0.0,
-          child: AppBar(
-            leading: TouchableOpacity(
-              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 25),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: const Text("Photo",
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-            forceMaterialTransparency: true,
-          ),
-        ),
-      ),
-      body: MouseRegion(
-        onHover: (_) => _resetControlsTimer(),
-        child: GestureDetector(
-          onTap: _toggleControls,
-          child: Stack(
-            children: [
-              useAdvancedTextures
-                  ? ProgressiveBlurWidget(
-                      linearGradientBlur: const LinearGradientBlur(
-                        values: [1, 0],
-                        stops: [0, 0.25],
-                        start: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      sigma: _showControls ? 24.0 : 0,
-                      child: gallery,
-                    )
-                  : gallery,
-
-              _buildTopFade(),
-
-              if (isDesktop && _currentPage > 0)
-                _buildSideNav(isLeft: true, icon: Icons.arrow_back_ios_new),
-              if (isDesktop &&
-                  _currentPage < (imageValue?.length ?? widget.count) - 1)
-                _buildSideNav(isLeft: false, icon: Icons.arrow_forward_ios),
-
-              // BOTTOM PILL ACTION BAR
-              Positioned(
-                bottom: bottomInset > 0 ? bottomInset : 25,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
-                    opacity: _showControls ? 1.0 : 0.0,
-                    child: IgnorePointer(
-                      ignoring: !_showControls,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                          child: Container(
-                            height: 60,
-                            width: MediaQuery.of(context).size.width * 0.8,
-                            constraints: const BoxConstraints(maxWidth: 400),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
-                                width: 0.5,
+    return CupertinoPageScaffold(
+      backgroundColor:
+          CupertinoTheme.of(context).scaffoldBackgroundColor.withAlpha(0),
+      resizeToAvoidBottomInset: false, // Prevent keyboard or system shifts
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: MouseRegion(
+          onHover: (_) => _resetControlsTimer(),
+          child: GestureDetector(
+            onTap: _toggleControls,
+            child: SizedBox.expand(
+              // 2. Force the stack to fill every available pixel
+              child: Stack(
+                children: [
+                  // --- LAYER 1: THE IMAGE GALLERY ---
+                  Positioned.fill(
+                    child: MediaQuery.removePadding(
+                      context: context,
+                      removeTop: true,
+                      removeBottom: true,
+                      removeLeft: true,
+                      removeRight: true,
+                      child: useAdvancedTextures
+                          ? ProgressiveBlurWidget(
+                              linearGradientBlur: const LinearGradientBlur(
+                                values: [1, 0],
+                                stops: [0, 0.25],
+                                start: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _pillAction(Icons.ios_share, () {}),
-                                _pillAction(Icons.favorite_border, () {}),
-                                _pillAction(Icons.info_outline, () {}),
-                                _pillAction(Icons.delete_outline, _handleDelete,
-                                    isDestructive: true),
-                              ],
+                              sigma: _showControls ? 24.0 : 0,
+                              child: gallery,
+                            )
+                          : gallery,
+                    ),
+                  ),
+
+                  // --- LAYER 2: TOP OVERLAYS ---
+                  _buildTopFade(),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      opacity: _showControls ? 1.0 : 0.0,
+                      child: IgnorePointer(
+                        ignoring: !_showControls,
+                        child: Container(
+                          padding: EdgeInsets.only(top: topPadding),
+                          child: CupertinoNavigationBar(
+                            backgroundColor: CupertinoTheme.of(context)
+                                .scaffoldBackgroundColor
+                                .withAlpha(0),
+                            border: null,
+                            enableBackgroundFilterBlur: false,
+                            middle: Text(
+                              "Photo",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    CupertinoColors.label.resolveFrom(context),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+
+                  // --- LAYER 3: DESKTOP NAVIGATION ---
+                  if (isDesktop && _currentPage > 0)
+                    _buildSideNav(isLeft: true, icon: CupertinoIcons.back),
+                  if (isDesktop &&
+                      _currentPage < (imageValue?.length ?? widget.count) - 1)
+                    _buildSideNav(isLeft: false, icon: CupertinoIcons.forward),
+
+                  // --- LAYER 4: BOTTOM PILL ACTION BAR ---
+                  Positioned(
+                    bottom: bottomInset > 0
+                        ? bottomInset
+                        : 30, // Adjust bottom spacing
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: _showControls ? 1.0 : 0.0,
+                        curve: Curves.easeOutCubic,
+                        child: AnimatedScale(
+                          duration: const Duration(milliseconds: 400),
+                          scale: _showControls ? 1.0 : 0.7,
+                          curve: Curves.easeOutBack,
+                          child: AnimatedSlide(
+                            duration: const Duration(milliseconds: 400),
+                            offset: _showControls
+                                ? Offset.zero
+                                : const Offset(0, 0.5),
+                            curve: Curves.easeOutBack,
+                            child: _buildBottomPill(context),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -378,11 +391,54 @@ class _PhotoViewState extends ConsumerState<PhotoView>
           height: 180,
           decoration: BoxDecoration(
             gradient: SmoothGradient(
-              from: Theme.of(context).colorScheme.surface.withAlpha(255),
-              to: Theme.of(context).colorScheme.surface.withAlpha(0),
+              from: CupertinoTheme.of(context)
+                  .scaffoldBackgroundColor
+                  .withAlpha(!kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                      ? 255
+                      : 220),
+              to: CupertinoTheme.of(context)
+                  .scaffoldBackgroundColor
+                  .withAlpha(0),
               curve: const Cubic(.05, .26, 1, .55),
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomPill(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !_showControls,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            height: 60,
+            width: MediaQuery.of(context).size.width * 0.8,
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: CupertinoColors.secondarySystemGroupedBackground
+                  .resolveFrom(context)
+                  .withAlpha(200),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: CupertinoColors.separator.resolveFrom(context),
+                width: 0.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _pillAction(CupertinoIcons.share, () {}),
+                _pillAction(CupertinoIcons.square_favorites, () {}),
+                _pillAction(CupertinoIcons.info, () {}),
+                _pillAction(CupertinoIcons.delete, _handleDelete,
+                    isDestructive: true),
+              ],
             ),
           ),
         ),
@@ -410,8 +466,12 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                   height: 50,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black.withOpacity(0.4),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    color: CupertinoColors.secondarySystemGroupedBackground
+                        .resolveFrom(context)
+                        .withAlpha(200),
+                    border: Border.all(
+                      color: CupertinoColors.separator.resolveFrom(context),
+                    ),
                   ),
                   child: CupertinoButton(
                     padding: EdgeInsets.zero,
@@ -425,7 +485,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut);
                     },
-                    child: Icon(icon, color: Colors.white, size: 22),
+                    child: Icon(icon,
+                        color: CupertinoColors.label.resolveFrom(context),
+                        size: 22),
                   ),
                 ),
               ),
@@ -447,7 +509,9 @@ class _PhotoViewState extends ConsumerState<PhotoView>
       child: Icon(
         icon,
         size: 24,
-        color: isDestructive ? Colors.redAccent : Colors.white.withOpacity(0.9),
+        color: isDestructive
+            ? CupertinoColors.systemRed
+            : CupertinoColors.activeBlue,
       ),
     );
   }

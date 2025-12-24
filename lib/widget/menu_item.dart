@@ -1,19 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-
-// Widget _buildMenuSection(BuildContext context, List<Widget> children) {
-//   return Container(
-//     margin: const EdgeInsets.symmetric(horizontal: _menuSpacing),
-//     decoration: BoxDecoration(
-//       color: Theme.of(context).colorScheme.surfaceContainerLow,
-//       borderRadius: BorderRadius.circular(_borderRadius),
-//       // border: Border.all(
-//       //   color: Theme.of(context).dividerColor.withOpacity(0.1),
-//       // ),
-//     ),
-//     child: Column(children: children),
-//   );
-// }
 
 class MenuSection extends StatelessWidget {
   final double menuSpacing;
@@ -26,86 +11,91 @@ class MenuSection extends StatelessWidget {
     required this.borderRadius,
     required this.children,
   });
-  // const MenuSection({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: menuSpacing),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        color: CupertinoColors.secondarySystemGroupedBackground
+            .resolveFrom(context),
         borderRadius: BorderRadius.circular(borderRadius),
-        // border: Border.all(
-        //   color: Theme.of(context).dividerColor.withOpacity(0.1),
-        // ),
       ),
-      child: Column(children: children),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Column(children: children),
+      ),
     );
   }
 }
 
 class MenuItem extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
+  final Color? iconColor; // Optional: will default to primary blue
   final String title;
   final String subtitle;
   final VoidCallback onTap;
   final bool divider;
-  final Widget? trailing; // New parameter for trailing widget
+  final Widget? trailing;
 
   const MenuItem({
     super.key,
     required this.icon,
-    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.iconColor,
     this.divider = true,
     this.trailing,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
+    final theme = CupertinoTheme.of(context);
 
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20.0),
-          child: Material(
-            color: theme.colorScheme.surfaceContainerLow,
-            child: InkWell(
-              onTap: onTap,
-              splashColor: theme.colorScheme.primary.withAlpha(25),
-              highlightColor: Colors.transparent,
-              child: ListTile(
-                leading: Icon(icon, color: iconColor),
-                title: Text(
-                  title,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: theme.textTheme.bodySmall?.color,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                subtitle: Text(
-                  subtitle,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: theme.textTheme.bodySmall?.color!.withAlpha(160),
-                  ),
-                ),
-                trailing: trailing, // Use the trailing widget if provided
-              ),
+        CupertinoListTile(
+          padding: EdgeInsets.all(10),
+          onTap: onTap,
+          leading: Icon(
+            icon,
+            color: iconColor ?? theme.primaryColor,
+            size: 22,
+          ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: CupertinoColors.label
+                  .resolveFrom(context), // Adaptive black/white
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
           ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel
+                  .resolveFrom(context), // Adaptive grey
+              fontSize: 13,
+            ),
+          ),
+          // Default trailing is a chevron if nothing else is provided
+          trailing: trailing ??
+              Icon(
+                CupertinoIcons.chevron_right,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+                size: 18,
+              ),
         ),
         if (divider)
-          Divider(
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-            color: theme.dividerColor.withAlpha(25),
+          Padding(
+            padding: const EdgeInsets.only(
+                left: 54), // Align with text, skipping icon
+            child: Container(
+              height: 0.5, // iOS dividers are very thin
+              color: CupertinoColors.separator.resolveFrom(context),
+            ),
           ),
       ],
     );
@@ -114,7 +104,7 @@ class MenuItem extends StatelessWidget {
 
 class MenuItemToggle extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
+  final Color? iconColor;
   final String title;
   final String subtitle;
   final bool value;
@@ -124,7 +114,7 @@ class MenuItemToggle extends StatelessWidget {
   const MenuItemToggle({
     super.key,
     required this.icon,
-    required this.iconColor,
+    this.iconColor,
     required this.title,
     required this.subtitle,
     required this.value,
@@ -139,11 +129,12 @@ class MenuItemToggle extends StatelessWidget {
       iconColor: iconColor,
       title: title,
       subtitle: subtitle,
-      onTap: () => onChanged(!value), // Toggles value when tapped
+      onTap: () => onChanged(!value),
       divider: divider,
-      trailing: Switch(
+      trailing: CupertinoSwitch(
         value: value,
         onChanged: onChanged,
+        activeTrackColor: CupertinoTheme.of(context).primaryColor,
       ),
     );
   }

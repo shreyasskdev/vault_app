@@ -1,156 +1,222 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:vault/widget/touchable.dart';
+import 'package:vault/widget/menu_item.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = CupertinoTheme.of(context);
+    final bgColor =
+        CupertinoColors.systemGroupedBackground.resolveFrom(context);
+    final primaryColor = theme.primaryColor;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: TouchableOpacity(
-          child: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 25,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
+    return CupertinoPageScaffold(
+      backgroundColor: bgColor,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: bgColor.withOpacity(0.9),
+        border: null,
+        middle: const Text(
           "About Vault",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              height: 120,
-              width: 120,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(60),
-              ),
-              child: Icon(
-                CupertinoIcons.lock_circle,
-                size: 80,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 20),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 40),
 
-            // App Title
-            Text(
-              "Vault",
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
+                    // --- HERO SECTION ---
+                    Center(
+                      child: Column(
+                        children: [
+                          // Native iOS App Icon Shape (Superellipse feel)
+                          Container(
+                            height: 110,
+                            width: 110,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  primaryColor.withOpacity(0.8),
+                                  primaryColor,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                  26), // Smooth iOS radius
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(0.25),
+                                  blurRadius: 25,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              CupertinoIcons.lock_shield_fill,
+                              size: 55,
+                              color: CupertinoColors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const Text(
+                            "Vault",
+                            style: TextStyle(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800, // Heavier weight
+                              letterSpacing: -1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "Privacy at its best.",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w400,
+                              color: CupertinoColors.secondaryLabel
+                                  .resolveFrom(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-            // App Tagline
-            Text(
-              "Your encrypted photo gallery.\nPrivacy at its best.",
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.textTheme.bodySmall?.color,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
+                    const SizedBox(height: 44),
 
-            // Features Section
-            _buildFeatureItem(
-              context,
-              icon: CupertinoIcons.shield_fill,
-              title: "End-to-End Encryption",
-              subtitle:
-                  "Your photos are encrypted locally, ensuring complete privacy.",
-            ),
-            const SizedBox(height: 20),
-            _buildFeatureItem(
-              context,
-              icon: CupertinoIcons.lock_shield_fill,
-              title: "Theft Protection",
-              subtitle:
-                  "Advanced theft protection with gyroscope-based alerts.",
-            ),
-            const SizedBox(height: 20),
-            _buildFeatureItem(
-              context,
-              icon: CupertinoIcons.paintbrush,
-              title: "Customizable Appearance",
-              subtitle: "Personalize the app to suit your style.",
-            ),
+                    // --- FEATURES SECTION ---
+                    MenuSection(
+                      borderRadius: 20,
+                      menuSpacing: 16,
+                      children: [
+                        _buildFeatureRow(
+                          context,
+                          icon: CupertinoIcons.shield_fill,
+                          iconColor: CupertinoColors.systemGreen,
+                          title: "End-to-End Encryption",
+                          subtitle:
+                              "Your photos are encrypted locally on your device.",
+                        ),
+                        _buildFeatureRow(
+                          context,
+                          icon: CupertinoIcons.device_phone_portrait,
+                          iconColor: CupertinoColors.systemOrange,
+                          title: "Theft Protection",
+                          subtitle:
+                              "Gyroscope-based alerts keep your phone safe.",
+                        ),
+                        _buildFeatureRow(
+                          context,
+                          icon: CupertinoIcons.paintbrush_fill,
+                          iconColor: CupertinoColors.systemPurple,
+                          title: "Customizable Design",
+                          subtitle: "A beautiful experience tailored for iOS.",
+                          isLast: true,
+                        ),
+                      ],
+                    ),
 
-            const Spacer(),
+                    // Push footer to bottom
+                    const SizedBox(height: 60),
 
-            // Footer
-            Text(
-              "Version 0.0.1",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+                    // --- FOOTER ---
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Version 0.0.1 (Stable)",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: CupertinoColors.tertiaryLabel
+                                  .resolveFrom(context),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "© 2025 Vault Inc. Built with Flutter.",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: CupertinoColors.tertiaryLabel
+                                  .resolveFrom(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              "© 2025 Vault Inc. All rights reserved.",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildFeatureItem(
+  Widget _buildFeatureRow(
     BuildContext context, {
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
+    bool isLast = false,
   }) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 24, color: iconColor),
           ),
-          child: Icon(icon, size: 28, color: theme.colorScheme.primary),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                subtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.textTheme.bodySmall?.color,
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    height: 1.3,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                if (!isLast)
+                  Container(
+                    height: 0.5,
+                    color: CupertinoColors.separator.resolveFrom(context),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,6 @@ import 'package:progressive_blur/progressive_blur.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
-import 'package:vault/widget/touchable.dart';
 
 import 'photo.dart';
 
@@ -196,7 +196,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top + kToolbarHeight;
+    final topPadding =
+        MediaQuery.of(context).padding.top + kMinInteractiveDimensionCupertino;
 
     final Widget gridView = GridView.builder(
       controller: _scrollController,
@@ -231,7 +232,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
 
                 Navigator.of(context)
                     .push(
-                      MaterialPageRoute(
+                      CupertinoPageRoute(
                         builder: (context) => PhotoView(
                           url: Uri.decodeQueryComponent(imageUrl),
                           index: index,
@@ -273,20 +274,23 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isSelected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.white.withAlpha(204),
+                                ? CupertinoTheme.of(context).primaryColor
+                                : CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
                             border: Border.all(
                               color: isSelected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.grey.withAlpha(128),
+                                  ? CupertinoTheme.of(context).primaryColor
+                                  : CupertinoColors.systemFill
+                                      .resolveFrom(context),
                               width: 2,
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(
-                                  Icons.check,
+                              ? Icon(
+                                  CupertinoIcons.check_mark,
                                   size: 16,
-                                  color: Colors.white,
+                                  color: CupertinoTheme.of(context)
+                                      .scaffoldBackgroundColor,
                                 )
                               : null,
                         ),
@@ -300,50 +304,51 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       },
     );
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        forceMaterialTransparency: true,
+    return CupertinoPageScaffold(
+      // extendBodyBehindAppBar: true,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor:
+            CupertinoTheme.of(context).scaffoldBackgroundColor.withAlpha(0),
+        border: null,
+        enableBackgroundFilterBlur: false,
         leading: _isSelectionMode
-            ? IconButton(
-                icon: const Icon(Icons.close),
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
                 onPressed: _exitSelectionMode,
+                child: const Icon(CupertinoIcons.xmark, size: 22),
               )
-            : TouchableOpacity(
-                child: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  size: 25,
-                ),
+            : CupertinoButton(
+                padding: EdgeInsets.zero,
                 onPressed: () => Navigator.of(context).pop(),
+                // CupertinoIcons.back is the native iOS chevron
+                child: const Icon(CupertinoIcons.back, size: 28),
               ),
-        title: _isSelectionMode
+        middle: _isSelectionMode
             ? Text("${_selectedIndices.length} selected")
             : Text(widget.name,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        actions: <Widget>[
-          if (_isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _deleteSelectedPhotos,
-            )
-          else
-            TouchableOpacity(
-              onPressed: () {
-                getImageFromGallery();
-                HapticFeedback.heavyImpact();
-              },
-              child: const Padding(
-                padding:
-                    EdgeInsets.only(right: 15, left: 10, top: 10, bottom: 10),
-                child: Icon(Icons.add_circle_outline_rounded, size: 25),
+        trailing: _isSelectionMode
+            ? CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _deleteSelectedPhotos,
+                // Using systemRed for destructive actions is standard iOS practice
+                child: const Icon(CupertinoIcons.delete,
+                    color: CupertinoColors.systemRed, size: 24),
+              )
+            : CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  getImageFromGallery();
+                  HapticFeedback.heavyImpact();
+                },
+                child: const Padding(
+                  padding: EdgeInsets.only(
+                      right: 8), // Standard iOS trailing padding
+                  child: Icon(CupertinoIcons.add_circled, size: 26),
+                ),
               ),
-            ),
-        ],
       ),
-      body: Stack(
+      child: Stack(
         children: [
           ref.watch(settingsModelProvider).advancedTextures
               ? ProgressiveBlurWidget(
@@ -366,11 +371,20 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                 height: 200,
                 decoration: BoxDecoration(
                   gradient: SmoothGradient(
-                    from: Theme.of(context).colorScheme.surface.withAlpha(
-                        !kIsWeb && (Platform.isAndroid || Platform.isIOS)
-                            ? 255
-                            : 220),
-                    to: Theme.of(context).colorScheme.surface.withAlpha(0),
+                    from: CupertinoTheme.of(context)
+                        .scaffoldBackgroundColor
+                        .withAlpha(
+                            !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                                ? 255
+                                : 220),
+                    to: CupertinoTheme.of(context)
+                        .scaffoldBackgroundColor
+                        .withAlpha(0),
+                    // from: Theme.of(context).colorScheme.surface.withAlpha(
+                    //     !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                    //         ? 255
+                    //         : 220),
+                    // to: Theme.of(context).colorScheme.surface.withAlpha(0),
                     curve: const Cubic(.05, .26, 1, .55),
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,

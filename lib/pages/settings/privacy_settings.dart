@@ -1,14 +1,10 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/widget/menu_item.dart';
-import 'package:vault/widget/touchable.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
-
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
 class PrivacySettings extends ConsumerStatefulWidget {
@@ -20,23 +16,44 @@ class PrivacySettings extends ConsumerStatefulWidget {
 
 class _PrivacySettingsState extends ConsumerState<PrivacySettings>
     with fileapi.FileApiWrapper {
-  static const double _menuSpacing = 10.0;
+  static const double _menuSpacing = 16.0;
   static const double _borderRadius = 20.0;
 
+  void _showCupertinoNotify(String message, {String title = "Security"}) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Text(message),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text("Done"),
+            onPressed: () => Navigator.pop(context),
+          )
+        ],
+      ),
+    );
+  }
+
   Future<void> backupAll() async {
-    final result = await showDialog<bool>(
+    final result = await showCupertinoDialog<bool>(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Backup type"),
-          content: const Text("Do you want to encrypt the backup?"),
+        return CupertinoAlertDialog(
+          title: const Text("Backup Encryption"),
+          content: const Text(
+              "Encrypting your backup adds an extra layer of security. You will need a password to restore it later."),
           actions: [
-            TextButton(
-              child: const Text("No"),
+            CupertinoDialogAction(
+              child: const Text("No, Plain Zip"),
               onPressed: () => Navigator.of(context).pop(false),
             ),
-            TextButton(
-              child: const Text("Yes"),
+            CupertinoDialogAction(
+              isDefaultAction: true,
+              child: const Text("Yes, Encrypt"),
               onPressed: () => Navigator.of(context).pop(true),
             ),
           ],
@@ -44,9 +61,7 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
       },
     );
 
-    if (result == null) return; // cancelled
-
-    WidgetsFlutterBinding.ensureInitialized();
+    if (result == null) return;
 
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String rootDirectory = '${appDocDir.path}/Collections';
@@ -61,12 +76,11 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
 
     await zipBackupWrapper(rootDirectory, downloadPath, result);
 
-    final snackBar = SnackBar(
-      content: Text(
-          'Backup ${result ? "with encryption" : "without encryption"} saved to $downloadPath'),
-    );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      _showCupertinoNotify(
+        'Backup created successfully. \n\nLocation: $downloadPath',
+        title: "Backup Complete",
+      );
     }
   }
 
@@ -80,22 +94,19 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
 
       if (result != null && result.files.single.path != null) {
         String zipPath = result.files.single.path!;
-        String? password; // Password will be null if not encrypted
+        String? password;
 
         if (await checkZipEncryptedWrapper(zipPath)) {
-          // The dialog now handles verification and only returns a
-          // password if it's correct.
           password = await showPasswordDialog(currentContext, zipPath);
-
-          // If the password is null, it means the user cancelled the dialog.
           if (password == null) return;
         }
 
-        // If we get here, we're ready to restore.
-        showDialog(
-            context: currentContext,
-            barrierDismissible: false,
-            builder: (_) => const Center(child: CircularProgressIndicator()));
+        showCupertinoDialog(
+          context: currentContext,
+          barrierDismissible: false,
+          builder: (_) =>
+              const Center(child: CupertinoActivityIndicator(radius: 15)),
+        );
 
         Directory appDocDir = await getApplicationDocumentsDirectory();
         String rootDirectory = '${appDocDir.path}/Collections';
@@ -103,127 +114,104 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
         await restoreBackupWrapper(rootDirectory, zipPath, password);
 
         if (currentContext.mounted) Navigator.of(currentContext).pop();
-
         if (currentContext.mounted) {
-          ScaffoldMessenger.of(currentContext).showSnackBar(
-            const SnackBar(
-              content: Text('Restore successful!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          _showCupertinoNotify(
+              'Your vault contents have been restored successfully.',
+              title: "Restore Success");
         }
       }
     } catch (e) {
       if (currentContext.mounted) Navigator.of(currentContext).pop();
       if (currentContext.mounted) {
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Restore failed: ${e.toString().replaceFirst("Exception: ", "")}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showCupertinoNotify(
+            'Restore failed: ${e.toString().replaceFirst("Exception: ", "")}',
+            title: "Error");
       }
     }
   }
 
   Future<String?> showPasswordDialog(
       BuildContext context, String zipPath) async {
-    // This function now takes the zipPath to perform the check internally
     final TextEditingController passwordController = TextEditingController();
-    // A key to manage the form state, especially for validation
-    final formKey = GlobalKey<FormState>();
-    String? errorMessage;
     bool isChecking = false;
+    String? error;
 
-    return showDialog<String>(
+    return showCupertinoDialog<String>(
       context: context,
-      barrierDismissible: false,
       builder: (BuildContext context) {
-        // Use a StatefulWidget to manage error messages and loading state
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text("Enter Password"),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                        "This archive is encrypted. Please enter the password:"),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: true,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.lock),
-                        // Display the error message from our state
-                        errorText: errorMessage,
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password cannot be empty';
-                        }
-                        return null;
-                      },
+            return CupertinoAlertDialog(
+              title: const Text("Vault Password"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                      "This backup is encrypted. Please enter the decryption key:"),
+                  const SizedBox(height: 16),
+                  CupertinoTextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    autofocus: true,
+                    placeholder: "Password",
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.tertiarySystemFill
+                          .resolveFrom(context),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    if (isChecking) ...[
-                      const SizedBox(height: 16),
-                      const CircularProgressIndicator(),
-                    ]
-                  ],
-                ),
+                  ),
+                  if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(error!,
+                          style: const TextStyle(
+                              color: CupertinoColors.destructiveRed,
+                              fontSize: 13)),
+                    ),
+                  if (isChecking)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: CupertinoActivityIndicator(),
+                    ),
+                ],
               ),
               actions: [
-                TextButton(
+                CupertinoDialogAction(
                   child: const Text("Cancel"),
                   onPressed: () => Navigator.of(context).pop(null),
                 ),
-                TextButton(
-                  // Disable the button while checking
+                CupertinoDialogAction(
+                  isDefaultAction: true,
                   onPressed: isChecking
                       ? null
                       : () async {
-                          if (formKey.currentState!.validate()) {
-                            setState(() {
-                              isChecking = true;
-                              errorMessage = null;
-                            });
-
-                            try {
-                              final isPasswordCorrect =
-                                  await checkZipPasswordWrapper(
-                                zipPath,
-                                passwordController.text,
-                              );
-
-                              if (isPasswordCorrect) {
-                                // If correct, close the dialog and return the password
-                                if (context.mounted)
-                                  Navigator.of(context)
-                                      .pop(passwordController.text);
-                              } else {
-                                // If wrong, update the state to show an error message
-                                setState(() {
-                                  errorMessage =
-                                      'Incorrect password. Please try again.';
-                                  isChecking = false;
-                                });
-                              }
-                            } catch (e) {
+                          if (passwordController.text.isEmpty) return;
+                          setState(() {
+                            isChecking = true;
+                            error = null;
+                          });
+                          try {
+                            final isCorrect = await checkZipPasswordWrapper(
+                                zipPath, passwordController.text);
+                            if (isCorrect) {
+                              if (context.mounted)
+                                Navigator.of(context)
+                                    .pop(passwordController.text);
+                            } else {
                               setState(() {
-                                errorMessage =
-                                    'An error occurred. Please try again.';
                                 isChecking = false;
+                                error = "Incorrect password";
                               });
                             }
+                          } catch (e) {
+                            setState(() {
+                              isChecking = false;
+                              error = "Verification error";
+                            });
                           }
                         },
-                  child: const Text("OK"),
+                  child: const Text("Verify"),
                 ),
               ],
             );
@@ -235,75 +223,128 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = CupertinoTheme.of(context);
+    final bgColor =
+        CupertinoColors.systemGroupedBackground.resolveFrom(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: TouchableOpacity(
-          child: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 25,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text("Privacy",
+    return CupertinoPageScaffold(
+      backgroundColor: bgColor,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: bgColor.withOpacity(0.9),
+        border: null,
+        // leading: TouchableOpacity(
+        //   child: const Icon(CupertinoIcons.back, size: 25),
+        //   onPressed: () => Navigator.of(context).pop(),
+        // ),
+        middle: const Text("Privacy & Security",
             style: TextStyle(fontWeight: FontWeight.w600)),
-        centerTitle: true,
       ),
-      body: SizedBox.expand(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
-          child: Column(
-            children: [
-              const SizedBox(height: _menuSpacing),
-              MenuSection(
-                borderRadius: _borderRadius,
-                menuSpacing: _menuSpacing,
-                children: [
-                  MenuItemToggle(
-                    // context: context,
-                    icon: CupertinoIcons.brightness,
-                    // icon: Icons.sunny,
-                    iconColor: theme.colorScheme.primary,
-                    title: "Theft protection",
-                    subtitle: "Theft protection with gyrosope",
-                    value: ref.watch(settingsModelProvider).theftProtection,
-                    onChanged: (value) => {
-                      ref.read(settingsModelProvider).toggleTheftProtection()
-                    },
-                    divider: false,
-                  ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 32),
+
+                    // --- HERO HEADER ---
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              CupertinoIcons.shield_lefthalf_fill,
+                              size: 60,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "Security Hub",
+                            style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -1),
+                          ),
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Text(
+                              "Manage your theft protection settings and encrypted backups.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: CupertinoColors.secondaryLabel
+                                    .resolveFrom(context),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // --- PROTECTION SECTION ---
+                    MenuSection(
+                      borderRadius: _borderRadius,
+                      menuSpacing: 16.0,
+                      children: [
+                        MenuItemToggle(
+                          icon: CupertinoIcons.device_phone_portrait,
+                          iconColor: CupertinoColors.systemIndigo,
+                          title: "Theft Protection",
+                          subtitle: "Alerts based on device gyroscope",
+                          value:
+                              ref.watch(settingsModelProvider).theftProtection,
+                          onChanged: (value) => ref
+                              .read(settingsModelProvider)
+                              .toggleTheftProtection(),
+                          divider: false,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: _menuSpacing),
+
+                    // --- DATA SECTION ---
+                    MenuSection(
+                      borderRadius: _borderRadius,
+                      menuSpacing: 16.0,
+                      children: [
+                        MenuItem(
+                          icon: CupertinoIcons.cloud_upload,
+                          iconColor: theme.primaryColor,
+                          title: "Local Backup",
+                          subtitle: "Export all data to a secure ZIP",
+                          onTap: backupAll,
+                          divider: true,
+                        ),
+                        MenuItem(
+                          icon: CupertinoIcons.cloud_download,
+                          iconColor: CupertinoColors.systemGreen,
+                          title: "Restore Backup",
+                          subtitle: "Import contents from a previous backup",
+                          onTap: restoreBackup,
+                          divider: false,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-              const SizedBox(height: _menuSpacing),
-              MenuSection(
-                borderRadius: _borderRadius,
-                menuSpacing: _menuSpacing,
-                children: [
-                  MenuItem(
-                    icon: CupertinoIcons.cloud_upload,
-                    // icon: Icons.info,
-                    iconColor: theme.colorScheme.primary,
-                    title: "Local Backup",
-                    subtitle: "Backup all the contents encrypted or not",
-                    onTap: backupAll,
-                    divider: true,
-                  ),
-                  MenuItem(
-                    icon: CupertinoIcons.cloud_download,
-                    // icon: Icons.info,
-                    iconColor: theme.colorScheme.primary,
-                    title: "Restore Backup",
-                    subtitle: "Restore all the contents encrypted or not",
-                    onTap: restoreBackup,
-                    divider: false,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

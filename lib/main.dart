@@ -1,10 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:progressive_blur/progressive_blur.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/router_provider.dart';
-import 'themes/dark_theme.dart';
-import 'themes/light_theme.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
@@ -74,34 +72,34 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return authStatus.when(
       loading: () {
-        // FIX: Provide a themed MaterialApp for the loading state.
-        return MaterialApp(
+        return CupertinoApp(
           debugShowCheckedModeBanner: false,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
+          theme: CupertinoThemeData(
+            brightness: settings.darkmode ? Brightness.dark : Brightness.light,
+            // primaryColor: CupertinoColors.activeBlue,
+          ),
           home: const SplashScreen(),
         );
       },
       error: (err, stack) {
-        // FIX: Provide a themed MaterialApp for the error state.
-        return MaterialApp(
+        return CupertinoApp(
           debugShowCheckedModeBanner: false,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
+          theme: CupertinoThemeData(
+            brightness: settings.darkmode ? Brightness.dark : Brightness.light,
+            // primaryColor: CupertinoColors.activeBlue,
+          ),
           home: ErrorScreen(error: err.toString()),
         );
       },
       data: (_) {
-        // This is the main app state, which uses the router.
         final router = ref.watch(routerProvider);
-        return MaterialApp.router(
+        return CupertinoApp.router(
           title: "Vault",
           debugShowCheckedModeBanner: false,
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: settings.darkmode ? ThemeMode.dark : ThemeMode.light,
+          theme: CupertinoThemeData(
+            brightness: settings.darkmode ? Brightness.dark : Brightness.light,
+            // primaryColor: CupertinoColors.activeBlue,
+          ),
           routerConfig: router,
         );
       },
@@ -113,11 +111,8 @@ class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    // FIX: This widget should NOT build its own MaterialApp.
-    // It should only return the content (the Scaffold).
-    // The theme will be inherited from the parent MaterialApp.
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return const CupertinoPageScaffold(
+      child: Center(child: CupertinoActivityIndicator()),
     );
   }
 }
@@ -127,10 +122,8 @@ class ErrorScreen extends StatelessWidget {
   const ErrorScreen({super.key, required this.error});
   @override
   Widget build(BuildContext context) {
-    // FIX: This widget also should NOT build its own MaterialApp.
-    // It returns the Scaffold, and the theme is inherited.
-    return Scaffold(
-      body: Center(child: Text('Error: $error')),
+    return CupertinoPageScaffold(
+      child: Center(child: Text('Error: $error')),
     );
   }
 }
