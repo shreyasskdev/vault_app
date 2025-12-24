@@ -107,7 +107,7 @@ class _PasswordState extends ConsumerState<Password>
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -196,17 +196,25 @@ class _PasswordState extends ConsumerState<Password>
                       // --- UNLOCK BUTTON ---
                       SizedBox(
                         width: double.infinity,
-                        child: CupertinoButton.filled(
-                          borderRadius: BorderRadius.circular(14),
-                          onPressed: _isChecking || _controller.text.isEmpty
-                              ? null
-                              : checkPassword,
-                          child: _isChecking
-                              ? const CupertinoActivityIndicator()
-                              : const Text(
-                                  "Unlock",
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
+                        child: ListenableBuilder(
+                          listenable: _controller,
+                          builder: (context, _) {
+                            // The button only cares about these two values
+                            final bool canUnlock =
+                                _controller.text.isNotEmpty && !_isChecking;
+
+                            return CupertinoButton.filled(
+                              borderRadius: BorderRadius.circular(14),
+                              onPressed: canUnlock ? checkPassword : null,
+                              child: _isChecking
+                                  ? const CupertinoActivityIndicator()
+                                  : const Text(
+                                      "Unlock",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                            );
+                          },
                         ),
                       ),
 

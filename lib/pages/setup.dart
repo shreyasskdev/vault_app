@@ -42,8 +42,10 @@ class _SetupPageState extends ConsumerState<SetupPage>
 
       if (!mounted) return;
 
-      ref.read(isAuthenticatedProvider.notifier).state = true;
       ref.invalidate(passwordExistsProvider);
+      await ref.read(passwordExistsProvider.future);
+
+      ref.read(isAuthenticatedProvider.notifier).state = true;
     } catch (e) {
       if (mounted) {
         ref.read(isAuthenticatedProvider.notifier).state = false;
@@ -72,6 +74,7 @@ class _SetupPageState extends ConsumerState<SetupPage>
       navigationBar: const CupertinoNavigationBar(
         backgroundColor: CupertinoColors.transparent,
         border: null,
+        enableBackgroundFilterBlur: false,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -81,7 +84,7 @@ class _SetupPageState extends ConsumerState<SetupPage>
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
