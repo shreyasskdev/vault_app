@@ -11,6 +11,22 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+
+}
+
+subprojects {
+    project.configurations.all {
+        resolutionStrategy {
+            // Fix for the Activity library requirement
+            force 'androidx.activity:activity:1.9.3'
+            force 'androidx.activity:activity-ktx:1.9.3'
+            
+            // ADD THESE LINES to fix the Kotlin metadata mismatch:
+            force "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0"
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

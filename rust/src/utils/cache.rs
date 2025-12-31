@@ -1,14 +1,7 @@
 // file manipulation
 use std::{
-    fs::{
-        self, 
-        File
-    }, 
-    io::{
-        self, 
-        Cursor,  
-        Write
-    }, 
+    fs::{self, File},
+    io::{self, Cursor, Write},
     path::Path,
 };
 
@@ -22,14 +15,33 @@ use crate::utils::error::VaultError;
 use crate::utils::encryption::encrypt_data;
 
 // Image caching functions ----------------------------------------
-pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, components_y: u32) -> Result<(), VaultError> {
-    let img = image::load_from_memory(image_data)
-        .map_err(|e| VaultError::Error(e.to_string()))?;
+pub fn cache_image(
+    image_data: &Vec<u8>,
+    file_path: String,
+    components_x: u32,
+    components_y: u32,
+) -> Result<(), VaultError> {
+    // let img = image::load_from_memory(image_data)
+    //     .map_err(|e| VaultError::Error(e.to_string()))?;
+    let img = match image::load_from_memory(image_data) {
+        Ok(decoded) => decoded,
+        Err(_) => {
+            let grey_pixel = image::Rgb([128, 128, 128]);
+            let filler_buffer: image::ImageBuffer<image::Rgb<u8>, Vec<u8>> =
+                image::RgbImage::from_pixel(200, 200, grey_pixel);
+            image::DynamicImage::ImageRgb8(filler_buffer)
+        }
+    };
     let (width, height) = img.dimensions();
 
-
     // creating a blur hash
-    match blurhash::encode(components_x, components_y, width, height, img.to_rgba8().as_bytes()) {
+    match blurhash::encode(
+        components_x,
+        components_y,
+        width,
+        height,
+        img.to_rgba8().as_bytes(),
+    ) {
         Ok(hash) => {
             let path_temp = Path::new(file_path.as_str());
             // let parent_path = path_temp.parent().unwrap();
@@ -42,40 +54,43 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
                             let path = hash_path.as_os_str();
 
                             let content = format!("{} {:.2}", hash, width as f32 / height as f32);
-                    
+
                             match File::create(&path) {
                                 Ok(mut file) => {
                                     file.write_all(&encrypt_data(&content.as_bytes())?)
                                         .map_err(|e| VaultError::Error(e.to_string()))?;
-                                },
+                                }
                                 Err(e) => {
                                     if e.kind() == io::ErrorKind::NotFound {
                                         fs::create_dir_all(parent_path.join(".hash"))
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
-                                        let mut file  = File::create(&path)
+                                        let mut file = File::create(&path)
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
                                         file.write_all(&encrypt_data(&content.as_bytes())?)
                                             .map_err(|e| VaultError::Error(e.to_string()))?;
                                     } else {
                                         return Err(VaultError::Error(e.to_string()));
                                     }
-                                },
+                                }
                             }
-                        },
+                        }
                         None => return Err(VaultError::Error("Invalid path".to_string())),
                     }
-                    
-                },
+                }
                 None => return Err(VaultError::Error("Invalid path".to_string())),
             }
-            
-
-        },
+        }
         Err(e) => return Err(VaultError::Error(e.to_string())),
     }
 
     // resizing the image
-    let thumbnail = img.resize_to_fill(200, (200.0 * img.height() as f64 / img.width() as f64) as u32, imageops::FilterType::Triangle).to_rgb8();
+    let thumbnail = img
+        .resize_to_fill(
+            200,
+            (200.0 * img.height() as f64 / img.width() as f64) as u32,
+            imageops::FilterType::Triangle,
+        )
+        .to_rgb8();
     let mut buffer = Vec::new();
     image::write_buffer_with_format(
         &mut Cursor::new(&mut buffer),
@@ -84,7 +99,8 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
         thumbnail.height(),
         image::ColorType::Rgb8,
         image::ImageFormat::Jpeg,
-    ).map_err(|e| VaultError::Error(e.to_string()))?;
+    )
+    .map_err(|e| VaultError::Error(e.to_string()))?;
 
     // getting filepath
     // let working_dir = Path::new(&file_path)
@@ -102,7 +118,7 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
         Some(filepath) => match filepath.to_str() {
             Some(filepath_str) => {
                 filename = working_dir.join(format!(".thumbs/{}", filepath_str));
-            },
+            }
             None => return Err(VaultError::Error("Invalid path".to_string())),
         },
         None => return Err(VaultError::Error("Invalid path".to_string())),
@@ -112,9 +128,7 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
     let encrypted_data = encrypt_data(&buffer)?;
     match File::create(&filename) {
         Ok(mut file) => match file.write_all(&encrypted_data) {
-            Ok(_) => {
-                Ok(())
-            },
+            Ok(_) => Ok(()),
             Err(e) => Err(VaultError::Error(e.to_string())),
         },
         Err(e) => {
@@ -126,12 +140,12 @@ pub fn cache_image(image_data: &Vec<u8>, file_path: String, components_x: u32, c
                     Ok(mut file) => match file.write_all(&encrypted_data) {
                         Ok(_) => Ok(()),
                         Err(e) => Err(VaultError::Error(e.to_string())),
-                    }
+                    },
                     Err(_) => Err(VaultError::Error(e.to_string())),
                 }
             } else {
                 Err(VaultError::Error(e.to_string()))
             }
-        },
+        }
     }
 }

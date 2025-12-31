@@ -37,8 +37,8 @@ dependencies:
   go_router: ^14.1.4
   google_fonts: ^6.2.1
 
-  image_picker: ^1.1.2
-  file_picker: ^10.2.0
+  image_picker: ^1.2.1
+  file_picker: ^10.3.8
   path_provider: ^2.0.11
   name_plus: ^0.0.1
   photo_view: ^0.15.0
@@ -63,6 +63,10 @@ dependencies:
   progressive_blur: ^0.0.2
 
   isolate_pool_2: ^1.0.8
+  
+  better_player_plus: ^1.1.5
+  
+
 
 dev_dependencies:
   flutter_test:

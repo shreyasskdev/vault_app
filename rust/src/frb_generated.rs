@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.10.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -493258791;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1217185113;
 
 // Section: executor
 
@@ -485,7 +485,7 @@ fn wire__crate__api__file__save_file_impl(
         },
     )
 }
-fn wire__crate__api__file__save_image_impl(
+fn wire__crate__api__file__save_media_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -493,7 +493,7 @@ fn wire__crate__api__file__save_image_impl(
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "save_image",
+            debug_name: "save_media",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
@@ -512,7 +512,7 @@ fn wire__crate__api__file__save_image_impl(
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, crate::utils::error::VaultError>((move || {
-                    let output_ok = crate::api::file::save_image(api_image_data, api_dir)?;
+                    let output_ok = crate::api::file::save_media(api_image_data, api_dir)?;
                     Ok(output_ok)
                 })())
             }
@@ -797,7 +797,7 @@ fn pde_ffi_dispatcher_primary_impl(
         11 => wire__crate__api__file__get_images_impl(port, ptr, rust_vec_len, data_len),
         12 => wire__crate__api__file__restore_backup_impl(port, ptr, rust_vec_len, data_len),
         13 => wire__crate__api__file__save_file_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__file__save_image_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__file__save_media_impl(port, ptr, rust_vec_len, data_len),
         15 => wire__crate__api__file__save_password_impl(port, ptr, rust_vec_len, data_len),
         16 => wire__crate__api__file__set_password_impl(port, ptr, rust_vec_len, data_len),
         17 => wire__crate__api__file__zip_backup_impl(port, ptr, rust_vec_len, data_len),

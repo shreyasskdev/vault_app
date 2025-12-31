@@ -37,8 +37,8 @@ Future<Uint8List> getFileThumb({required String path}) =>
 Future<Uint8List> getFile({required String path}) =>
     RustLib.instance.api.crateApiFileGetFile(path: path);
 
-Future<void> saveImage({required List<int> imageData, required String dir}) =>
-    RustLib.instance.api.crateApiFileSaveImage(imageData: imageData, dir: dir);
+Future<void> saveMedia({required List<int> imageData, required String dir}) =>
+    RustLib.instance.api.crateApiFileSaveMedia(imageData: imageData, dir: dir);
 
 Future<void> saveFile({required List<int> imageData, required String dir}) =>
     RustLib.instance.api.crateApiFileSaveFile(imageData: imageData, dir: dir);

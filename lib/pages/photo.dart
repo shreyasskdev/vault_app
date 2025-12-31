@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
@@ -237,23 +238,72 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     }
   }
 
+  // Widget _buildImageLoader(int index) {
+  //   final fullImageBytes = _fullImageCache[index];
+  //   final thumbnailBytes = _thumbnailCache[index];
+
+  //   if (fullImageBytes != null) {
+  //     return FutureBuilder<Image>(
+  //       key: ValueKey(fullImageBytes),
+  //       future: compute(_decodeImage, fullImageBytes),
+  //       builder: (context, snapshot) {
+  //         if (snapshot.hasData) return snapshot.data!;
+  //         if (thumbnailBytes != null) {
+  //           return Image.memory(thumbnailBytes,
+  //               fit: BoxFit.contain, gaplessPlayback: true);
+  //         }
+  //         return const Center(child: CupertinoActivityIndicator());
+  //       },
+  //     );
+  //   }
+
+  //   if (thumbnailBytes != null) {
+  //     _loadFullImageAtIndex(index);
+  //     return Image.memory(thumbnailBytes, fit: BoxFit.contain);
+  //   }
+
+  //   _loadThumbnailAtIndex(index);
+  //   _loadFullImageAtIndex(index);
+  //   return Center(
+  //     child: CupertinoActivityIndicator(
+  //       color: CupertinoColors.label.resolveFrom(context),
+  //     ),
+  //   );
+  // }
+
   Widget _buildImageLoader(int index) {
-    final fullImageBytes = _fullImageCache[index];
+    // 1. Determine if this index is a video or image
+    final String fileName = (imageValue != null && index < imageValue!.length)
+        ? imageValue![index].keys.first
+        : "";
+    final bool isVideo = fileName.toLowerCase().endsWith('.video');
+
+    final fullBytes = _fullImageCache[index];
     final thumbnailBytes = _thumbnailCache[index];
 
-    if (fullImageBytes != null) {
-      return FutureBuilder<Image>(
-        key: ValueKey(fullImageBytes),
-        future: compute(_decodeImage, fullImageBytes),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) return snapshot.data!;
-          if (thumbnailBytes != null) {
-            return Image.memory(thumbnailBytes,
-                fit: BoxFit.contain, gaplessPlayback: true);
-          }
-          return const Center(child: CupertinoActivityIndicator());
-        },
-      );
+    // --- Case A: Full Data is Loaded ---
+    if (fullBytes != null) {
+      if (isVideo) {
+        // Return custom Video Player for .video files
+        return VaultVideoPlayer(
+          key: ValueKey("video_$index"),
+          videoBytes: fullBytes,
+        );
+      } else {
+        // Return existing Image logic for .image files
+        return FutureBuilder<Image>(
+          key: ValueKey(fullBytes),
+          future: compute(_decodeImage, fullBytes),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) return snapshot.data!;
+            if (thumbnailBytes != null) {
+              return Image.memory(thumbnailBytes,
+                  fit: BoxFit.contain, gaplessPlayback: true);
+            }
+            return const Center(child: CupertinoActivityIndicator());
+          },
+        );
+      }
     }
 
     if (thumbnailBytes != null) {
@@ -555,6 +605,59 @@ class _PhotoViewState extends ConsumerState<PhotoView>
             ? CupertinoColors.systemRed
             : CupertinoColors.activeBlue,
       ),
+    );
+  }
+}
+
+class VaultVideoPlayer extends StatefulWidget {
+  final Uint8List videoBytes;
+
+  const VaultVideoPlayer({super.key, required this.videoBytes});
+
+  @override
+  State<VaultVideoPlayer> createState() => _VaultVideoPlayerState();
+}
+
+class _VaultVideoPlayerState extends State<VaultVideoPlayer> {
+  late BetterPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 1. Configure the data source from memory
+    BetterPlayerDataSource dataSource = BetterPlayerDataSource(
+      BetterPlayerDataSourceType.memory,
+      "", // BetterPlayer needs a placeholder name
+      bytes: widget.videoBytes,
+    );
+
+    // 2. Configure the controller
+    _controller = BetterPlayerController(
+      const BetterPlayerConfiguration(
+        autoPlay: true,
+        looping: true,
+        fit: BoxFit.contain,
+        // Match your UI theme
+        controlsConfiguration: BetterPlayerControlsConfiguration(
+          enableFullscreen: false,
+          enablePip: false,
+        ),
+      ),
+      betterPlayerDataSource: dataSource,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: BetterPlayer(controller: _controller),
     );
   }
 }

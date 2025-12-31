@@ -24,6 +24,8 @@ use crate::utils::cache::cache_image;
 // Utils
 use crate::utils::utils::generate_unique_filename;
 
+use infer;
+
 pub fn set_password(password: &str, dir: &str) -> Result<bool, VaultError> {
     Ok(check_password(password, dir)?)
 }
@@ -169,8 +171,17 @@ pub fn get_file(path: &str) -> Result<Vec<u8>, VaultError> {
     }
 }
 
-pub fn save_image(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
-    let path = Path::new(&dir).join(generate_unique_filename(&dir));
+pub fn save_media(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
+    let info = infer::get(&image_data);
+
+    let category = match info {
+        Some(t) if t.matcher_type() == infer::MatcherType::IMAGE => "image",
+        Some(t) if t.matcher_type() == infer::MatcherType::VIDEO => "video",
+        _ => "file",
+    };
+
+    let filename = generate_unique_filename(&dir, category);
+    let path = Path::new(&dir).join(&filename);
 
     cache_image(
         &image_data,
@@ -190,7 +201,7 @@ pub fn save_image(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
 }
 
 pub fn save_file(image_data: Vec<u8>, dir: String) -> Result<(), VaultError> {
-    let path = Path::new(&dir).join(generate_unique_filename(&dir));
+    let path = Path::new(&dir).join(generate_unique_filename(&dir, "file"));
     let encrypted_data = encrypt_data(&image_data)?;
 
     match File::create(&path) {
@@ -360,11 +371,11 @@ pub fn restore_backup(
             if let Some(ref decrypter) = decrypter {
                 let decrypted_data = decrypter.decrypt(&file_content)?;
                 if let Some(parent_dir) = outpath.parent() {
-                    save_image(decrypted_data, parent_dir.to_string_lossy().to_string())?;
+                    save_media(decrypted_data, parent_dir.to_string_lossy().to_string())?;
                 }
             } else {
                 if let Some(parent_dir) = outpath.parent() {
-                    save_image(file_content, parent_dir.to_string_lossy().to_string())?;
+                    save_media(file_content, parent_dir.to_string_lossy().to_string())?;
                 }
             }
         }

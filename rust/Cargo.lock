@@ -837,6 +837,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "infer"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "865e8a58ae8e24d2c4412c31344afa1d302a3740ad67528c10f50d6876cdcf55"
+
+[[package]]
 name = "inout"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1396,6 +1402,7 @@ dependencies = [
  "flutter_rust_bridge",
  "getrandom",
  "image",
+ "infer",
  "lazy_static",
  "pbkdf2 0.12.2",
  "rand",

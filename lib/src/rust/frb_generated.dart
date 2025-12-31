@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.10.0';
 
   @override
-  int get rustContentHash => -493258791;
+  int get rustContentHash => 1217185113;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -110,7 +110,7 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiFileSaveFile(
       {required List<int> imageData, required String dir});
 
-  Future<void> crateApiFileSaveImage(
+  Future<void> crateApiFileSaveMedia(
       {required List<int> imageData, required String dir});
 
   Future<void> crateApiFileSavePassword(
@@ -460,7 +460,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateApiFileSaveImage(
+  Future<void> crateApiFileSaveMedia(
       {required List<int> imageData, required String dir}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
@@ -474,14 +474,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: sse_decode_vault_error,
       ),
-      constMeta: kCrateApiFileSaveImageConstMeta,
+      constMeta: kCrateApiFileSaveMediaConstMeta,
       argValues: [imageData, dir],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateApiFileSaveImageConstMeta => const TaskConstMeta(
-        debugName: "save_image",
+  TaskConstMeta get kCrateApiFileSaveMediaConstMeta => const TaskConstMeta(
+        debugName: "save_media",
         argNames: ["imageData", "dir"],
       );
 

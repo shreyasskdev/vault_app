@@ -101,7 +101,7 @@ mixin FileApiWrapper {
 
   Future<void> saveImageWrapper(data, path) async {
     return await file_api
-        .saveImage(
+        .saveMedia(
           imageData: data,
           dir: path,
         )

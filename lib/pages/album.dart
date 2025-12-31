@@ -78,7 +78,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
   }
 
-  // New method to load thumbnails concurrently
   Future<void> _loadAllThumbnails() async {
     if (_isThumbnailLoading || files.isEmpty) return;
     _isThumbnailLoading = true;
@@ -99,7 +98,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
   }
 
-  // Modified to be called from the concurrent loader
   Future<void> _loadThumbnailAtIndex(int index) async {
     if (_thumbnailCache.containsKey(index) || files.isEmpty) return;
 
@@ -108,7 +106,6 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       final imageData = await getFileThumbWrapper(imagePath, ref);
 
       if (mounted && !_thumbnailCache.containsKey(index)) {
-        // This setState is now less frequent as it's part of a larger batch
         setState(() {
           _thumbnailCache[index] = Uint8List.fromList(imageData);
         });
@@ -124,14 +121,13 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     String directory = '${appDocDir.path}/Collections';
 
-    final List<XFile> images = await ImagePicker().pickMultiImage();
+    final List<XFile> images = await ImagePicker().pickMultipleMedia();
 
     if (images.isEmpty) {
       debugPrint("No image selected");
       return;
     }
 
-    // Process images in a less blocking way
     await Future.forEach(images, (image) async {
       try {
         final bytes = await image.readAsBytes();
