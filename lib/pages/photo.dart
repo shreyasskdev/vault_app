@@ -5,14 +5,19 @@ import 'dart:ui';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart'
-    show MaterialRectArcTween; // Added Colors
+import 'package:flutter/material.dart' show MaterialRectArcTween;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:progressive_blur/progressive_blur.dart';
+import 'package:shelf/shelf.dart' as shelf;
+import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:smooth_gradient/smooth_gradient.dart';
+import 'package:uuid/uuid.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 
@@ -50,6 +55,8 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   // Animation Controller for unified, smooth transitions
   late final AnimationController _animationController;
   late final Animation<double> _animationCurve;
+
+  Player? _activePlayer;
 
   List<Map<String, (String, double)>>? imageValue;
   final Map<int, Uint8List> _thumbnailCache = {};
@@ -179,7 +186,11 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   }
 
   void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
+    // setState(() => _currentPage = index);
+    setState(() {
+      _currentPage = index;
+      _activePlayer = null; // Hide controls while swiping
+    });
     _resetControlsTimer();
     final indicesToLoad = [index - 2, index + 2]
         .where((i) => i >= 0 && i < (imageValue?.length ?? 0))
@@ -284,10 +295,15 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     // --- Case A: Full Data is Loaded ---
     if (fullBytes != null) {
       if (isVideo) {
-        // Return custom Video Player for .video files
         return VaultVideoPlayer(
           key: ValueKey("video_$index"),
           videoBytes: fullBytes,
+          onCreated: (player) {
+            // Only update active player if we are still on this page
+            if (_currentPage == index) {
+              setState(() => _activePlayer = player);
+            }
+          },
         );
       } else {
         // Return existing Image logic for .image files
@@ -395,6 +411,18 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                           : gallery,
                     ),
                   ),
+
+                  // LAYER 1.5: FIXED VIDEO CONTROLS
+                  if (_activePlayer != null)
+                    Positioned(
+                      bottom: 100,
+                      left: 0,
+                      right: 0,
+                      child: VideoControlPill(
+                        player: _activePlayer!,
+                        visibility: _animationCurve,
+                      ),
+                    ),
 
                   // --- LAYER 2: TOP OVERLAYS ---
                   _buildTopFade(),
@@ -611,53 +639,256 @@ class _PhotoViewState extends ConsumerState<PhotoView>
 
 class VaultVideoPlayer extends StatefulWidget {
   final Uint8List videoBytes;
+  final void Function(Player player) onCreated;
 
-  const VaultVideoPlayer({super.key, required this.videoBytes});
+  const VaultVideoPlayer({
+    super.key,
+    required this.videoBytes,
+    required this.onCreated,
+  });
 
   @override
   State<VaultVideoPlayer> createState() => _VaultVideoPlayerState();
 }
 
-class _VaultVideoPlayerState extends State<VaultVideoPlayer> {
-  late BetterPlayerController _controller;
+// Add SingleTickerProviderStateMixin for the heartbeat ticker
+class _VaultVideoPlayerState extends State<VaultVideoPlayer>
+    with SingleTickerProviderStateMixin {
+  late final Player _player = Player();
+  late final VideoController _controller = VideoController(_player);
+
+  Ticker? _ticker;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
+    _initPlayer();
 
-    // 1. Configure the data source from memory
-    BetterPlayerDataSource dataSource = BetterPlayerDataSource(
-      BetterPlayerDataSourceType.memory,
-      "", // BetterPlayer needs a placeholder name
-      bytes: widget.videoBytes,
-    );
+    // --- THE VIDEO SURFACE TICKER ---
+    // Forces the video widget to rebuild every frame during playback.
+    // This is required on some Linux/Desktop backends to prevent the
+    // video surface from freezing when the UI is static.
+    _ticker = createTicker((_) {
+      if (mounted && _initialized && _player.state.playing) {
+        setState(() {});
+      }
+    })
+      ..start();
+  }
 
-    // 2. Configure the controller
-    _controller = BetterPlayerController(
-      const BetterPlayerConfiguration(
-        autoPlay: true,
-        looping: true,
-        fit: BoxFit.contain,
-        // Match your UI theme
-        controlsConfiguration: BetterPlayerControlsConfiguration(
-          enableFullscreen: false,
-          enablePip: false,
-        ),
-      ),
-      betterPlayerDataSource: dataSource,
-    );
+  Future<void> _initPlayer() async {
+    await _player.setPlaylistMode(PlaylistMode.none);
+    final playable = await Media.memory(widget.videoBytes);
+    await _player.open(playable, play: true);
+
+    widget.onCreated(_player);
+
+    if (mounted) setState(() => _initialized = true);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ticker?.dispose(); // Clean up ticker
+    _player.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: BetterPlayer(controller: _controller),
+      child: Video(
+        controller: _controller,
+        controls: NoVideoControls,
+      ),
     );
+  }
+}
+
+class VideoControlPill extends StatefulWidget {
+  final Player player;
+  final Animation<double> visibility;
+
+  const VideoControlPill(
+      {super.key, required this.player, required this.visibility});
+
+  @override
+  State<VideoControlPill> createState() => _VideoControlPillState();
+}
+
+class _VideoControlPillState extends State<VideoControlPill>
+    with SingleTickerProviderStateMixin {
+  Ticker? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker((_) {
+      if (widget.player.state.playing) setState(() {});
+    })
+      ..start();
+
+    // Listen for completion to reset
+    widget.player.stream.completed.listen((completed) {
+      if (completed) {
+        widget.player.pause();
+        widget.player.seek(Duration.zero);
+        if (mounted) setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final position = widget.player.state.position;
+    final duration = widget.player.state.duration;
+    final bool isMuted = widget.player.state.volume == 0;
+    final double targetProgress = duration.inMilliseconds > 0
+        ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
+        : 0.0;
+
+    return FadeTransition(
+      opacity: widget.visibility,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.85, end: 1.0).animate(widget.visibility),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // Prevent tap through
+            behavior: HitTestBehavior.opaque,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(25),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  constraints: const BoxConstraints(maxWidth: 550),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    color: CupertinoColors.secondarySystemGroupedBackground
+                        .resolveFrom(context)
+                        .withAlpha(140),
+                    border: Border.all(
+                        color: CupertinoColors.separator.resolveFrom(context),
+                        width: 0.5),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildPlayPause(),
+                      const SizedBox(width: 16),
+                      _buildProgressBar(targetProgress),
+                      const SizedBox(width: 16),
+                      _buildMute(isMuted),
+                      const SizedBox(width: 4),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlayPause() {
+    return GestureDetector(
+      onTap: () {
+        widget.player.playOrPause();
+        setState(() {});
+      },
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: Icon(
+          widget.player.state.playing
+              ? CupertinoIcons.pause_fill
+              : CupertinoIcons.play_fill,
+          color: CupertinoColors.label.resolveFrom(context),
+          size: 22,
+          key: ValueKey(widget.player.state.playing),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(double progress) {
+    return Expanded(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragUpdate: (details) =>
+                _handleScrub(details, constraints.maxWidth),
+            onTapDown: (details) => _handleScrub(details, constraints.maxWidth),
+            child: Container(
+              height: 30,
+              alignment: Alignment.center,
+              child: Stack(
+                children: [
+                  Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3),
+                      color: CupertinoColors.label
+                          .resolveFrom(context)
+                          .withAlpha(30),
+                    ),
+                  ),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: progress),
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return FractionallySizedBox(
+                        widthFactor: value,
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            color: CupertinoColors.label.resolveFrom(context),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMute(bool isMuted) {
+    return GestureDetector(
+      onTap: () {
+        widget.player.setVolume(isMuted ? 100 : 0);
+        setState(() {});
+      },
+      child: Icon(
+        isMuted
+            ? CupertinoIcons.speaker_slash_fill
+            : CupertinoIcons.speaker_2_fill,
+        color: CupertinoColors.label.resolveFrom(context),
+        size: 20,
+      ),
+    );
+  }
+
+  void _handleScrub(dynamic details, double maxWidth) {
+    final double percentage =
+        (details.localPosition.dx / maxWidth).clamp(0.0, 1.0);
+    widget.player.seek(Duration(
+        milliseconds: (widget.player.state.duration.inMilliseconds * percentage)
+            .toInt()));
+    setState(() {});
   }
 }

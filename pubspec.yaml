@@ -63,9 +63,17 @@ dependencies:
   progressive_blur: ^0.0.2
 
   isolate_pool_2: ^1.0.8
-  
+
   better_player_plus: ^1.1.5
   
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.7
+  media_kit_libs_linux: any # Important for your Arch setup
+  shelf: ^1.4.2
+  # shelf_io: ^1.0.0
+  # shelf_io: 
+  uuid: ^4.5.2
 
 
 dev_dependencies:

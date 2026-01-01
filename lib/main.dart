@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:progressive_blur/progressive_blur.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/router_provider.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
   await ProgressiveBlurWidget.precache();
+  MediaKit.ensureInitialized();
   // ProgressiveBlurWidget.precache();
 
   // PRE-WARM THE ISOLATE POOL
