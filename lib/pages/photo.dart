@@ -749,7 +749,6 @@ class _VideoControlPillState extends State<VideoControlPill>
     })
       ..start();
 
-    // Listen for completion to reset
     widget.player.stream.completed.listen((completed) {
       if (completed) {
         widget.player.pause();
@@ -780,7 +779,7 @@ class _VideoControlPillState extends State<VideoControlPill>
         scale: Tween<double>(begin: 0.85, end: 1.0).animate(widget.visibility),
         child: Center(
           child: GestureDetector(
-            onTap: () {}, // Prevent tap through
+            onTap: () {},
             behavior: HitTestBehavior.opaque,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(25),
@@ -789,8 +788,9 @@ class _VideoControlPillState extends State<VideoControlPill>
                 child: Container(
                   width: MediaQuery.of(context).size.width * 0.9,
                   constraints: const BoxConstraints(maxWidth: 550),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  height: 50, // 1. FIXED HEIGHT: Keeps the pill consistent
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 4), // Reduced horizontal padding
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(25),
                     color: CupertinoColors.secondarySystemGroupedBackground
@@ -803,11 +803,8 @@ class _VideoControlPillState extends State<VideoControlPill>
                   child: Row(
                     children: [
                       _buildPlayPause(),
-                      const SizedBox(width: 16),
                       _buildProgressBar(targetProgress),
-                      const SizedBox(width: 16),
                       _buildMute(isMuted),
-                      const SizedBox(width: 4),
                     ],
                   ),
                 ),
@@ -823,20 +820,26 @@ class _VideoControlPillState extends State<VideoControlPill>
     return GestureDetector(
       onTap: () {
         widget.player.playOrPause();
-        // If we just paused, the timer in _PhotoViewState will
-        // check 'isPlaying' and decide NOT to hide the controls.
         widget.onInteractionEnd();
         setState(() {});
       },
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: Icon(
-          widget.player.state.playing
-              ? CupertinoIcons.pause_fill
-              : CupertinoIcons.play_fill,
-          color: CupertinoColors.label.resolveFrom(context),
-          size: 22,
-          key: ValueKey(widget.player.state.playing),
+      onTapDown: (_) => widget.onInteractionStart(),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 50, // 2. SQUARE TARGET: 50x50 touch area
+        height: 50,
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              widget.player.state.playing
+                  ? CupertinoIcons.pause_fill
+                  : CupertinoIcons.play_fill,
+              color: CupertinoColors.label.resolveFrom(context),
+              size: 22,
+              key: ValueKey(widget.player.state.playing),
+            ),
+          ),
         ),
       ),
     );
@@ -848,11 +851,9 @@ class _VideoControlPillState extends State<VideoControlPill>
         builder: (context, constraints) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            // START Interaction
             onHorizontalDragStart: (_) => widget.onInteractionStart(),
             onHorizontalDragUpdate: (details) =>
                 _handleScrub(details, constraints.maxWidth),
-            // END Interaction
             onHorizontalDragEnd: (_) => widget.onInteractionEnd(),
             onTapDown: (details) {
               widget.onInteractionStart();
@@ -860,35 +861,40 @@ class _VideoControlPillState extends State<VideoControlPill>
             },
             onTapUp: (_) => widget.onInteractionEnd(),
             child: Container(
-              height: 30,
+              height: 50,
               alignment: Alignment.center,
               child: Stack(
                 children: [
-                  Container(
-                    height: 6,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      color: CupertinoColors.label
-                          .resolveFrom(context)
-                          .withAlpha(30),
+                  Center(
+                    child: Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: CupertinoColors.label
+                            .resolveFrom(context)
+                            .withAlpha(30),
+                      ),
                     ),
                   ),
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0, end: progress),
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return FractionallySizedBox(
-                        widthFactor: value,
-                        child: Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            color: CupertinoColors.label.resolveFrom(context),
+                  Align(
+                    alignment: AlignmentGeometry.centerLeft,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0, end: progress),
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return FractionallySizedBox(
+                          widthFactor: value,
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(3),
+                              color: CupertinoColors.label.resolveFrom(context),
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -903,14 +909,23 @@ class _VideoControlPillState extends State<VideoControlPill>
     return GestureDetector(
       onTap: () {
         widget.player.setVolume(isMuted ? 100 : 0);
+        widget.onInteractionEnd();
         setState(() {});
       },
-      child: Icon(
-        isMuted
-            ? CupertinoIcons.speaker_slash_fill
-            : CupertinoIcons.speaker_2_fill,
-        color: CupertinoColors.label.resolveFrom(context),
-        size: 20,
+      onTapDown: (_) => widget.onInteractionStart(),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 50, // 3. SQUARE TARGET: Matching the play button
+        height: 50,
+        child: Center(
+          child: Icon(
+            isMuted
+                ? CupertinoIcons.speaker_slash_fill
+                : CupertinoIcons.speaker_2_fill,
+            color: CupertinoColors.label.resolveFrom(context),
+            size: 20,
+          ),
+        ),
       ),
     );
   }
