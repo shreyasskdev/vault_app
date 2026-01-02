@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:better_player_plus/better_player_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show MaterialRectArcTween;
@@ -14,10 +13,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:progressive_blur/progressive_blur.dart';
-import 'package:shelf/shelf.dart' as shelf;
-import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:smooth_gradient/smooth_gradient.dart';
-import 'package:uuid/uuid.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
 

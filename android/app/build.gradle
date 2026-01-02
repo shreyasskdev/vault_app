@@ -9,7 +9,8 @@ android {
     namespace = "com.example.vault"
     compileSdk = flutter.compileSdkVersion
     // ndkVersion = flutter.ndkVersion
-    ndkVersion "25.1.8937393"
+    // ndkVersion "25.1.8937393"
+    ndkVersion = "28.2.13676358"
     // ndkVersion = "28.2.13676358"
 
     // compileOptions {
