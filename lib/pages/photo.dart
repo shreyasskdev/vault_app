@@ -58,6 +58,8 @@ class _PhotoViewState extends ConsumerState<PhotoView>
 
   Player? _activePlayer;
 
+  bool _isInteracting = false; // NEW: Tracks if user is scrubbing
+
   List<Map<String, (String, double)>>? imageValue;
   final Map<int, Uint8List> _thumbnailCache = {};
   final Map<int, Uint8List> _fullImageCache = {};
@@ -73,15 +75,14 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     _currentPage = widget.index;
     pageController = PageController(initialPage: widget.index);
 
-    // Initialize the explicit animation controller
     _animationController = AnimationController(
       vsync: this,
       duration:
-          const Duration(milliseconds: 500), // Slightly longer for "Linux" feel
+          const Duration(milliseconds: 800), // Slightly longer for "Linux" feel
     );
     _animationCurve = CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeOutBack, // Very smooth deceleration
+      curve: Curves.easeInOutBack, // Very smooth deceleration
     );
     _animationController.value = 1.0; // Start in the 'shown' state
 
@@ -124,14 +125,25 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   void _resetControlsTimer() {
     _controlsTimer?.cancel();
     if (!mounted) return;
+
+    // Show controls if they are hidden
     if (!_showControls) {
       _animationController.forward();
       setState(() => _showControls = true);
     }
-    _controlsTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && _showControls) {
-        _animationController.reverse();
-        setState(() => _showControls = false);
+
+    // Do NOT start the countdown if:
+    // 1. User is scrubbing (_isInteracting)
+    // 2. Video is paused
+    _controlsTimer = Timer(const Duration(seconds: 5), () {
+      // SLOWER: 5 seconds
+      if (mounted && _showControls && !_isInteracting) {
+        // Only hide if video is playing. If paused, keep controls visible.
+        final isPlaying = _activePlayer?.state.playing ?? false;
+        if (isPlaying) {
+          _animationController.reverse();
+          setState(() => _showControls = false);
+        }
       }
     });
   }
@@ -407,8 +419,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                   // LAYER 1.5: FIXED VIDEO CONTROLS
                   if (_activePlayer != null)
                     Positioned(
-                      // key: ValueKey(_activePlayer
-                      //     .hashCode), // Forces a refresh for each new player
                       bottom: 100,
                       left: 0,
                       right: 0,
@@ -417,6 +427,14 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                         visibility: _animationCurve,
                         key: ValueKey(_activePlayer
                             .hashCode), // Forces a refresh for each new player
+                        onInteractionStart: () {
+                          setState(() => _isInteracting = true);
+                          _controlsTimer?.cancel(); // Stop timer immediately
+                        },
+                        onInteractionEnd: () {
+                          setState(() => _isInteracting = false);
+                          _resetControlsTimer(); // Restart timer
+                        },
                       ),
                     ),
 
@@ -704,9 +722,16 @@ class _VaultVideoPlayerState extends State<VaultVideoPlayer>
 class VideoControlPill extends StatefulWidget {
   final Player player;
   final Animation<double> visibility;
+  final VoidCallback onInteractionStart;
+  final VoidCallback onInteractionEnd;
 
-  const VideoControlPill(
-      {super.key, required this.player, required this.visibility});
+  const VideoControlPill({
+    super.key,
+    required this.player,
+    required this.visibility,
+    required this.onInteractionStart,
+    required this.onInteractionEnd,
+  });
 
   @override
   State<VideoControlPill> createState() => _VideoControlPillState();
@@ -798,6 +823,9 @@ class _VideoControlPillState extends State<VideoControlPill>
     return GestureDetector(
       onTap: () {
         widget.player.playOrPause();
+        // If we just paused, the timer in _PhotoViewState will
+        // check 'isPlaying' and decide NOT to hide the controls.
+        widget.onInteractionEnd();
         setState(() {});
       },
       child: AnimatedSwitcher(
@@ -820,9 +848,17 @@ class _VideoControlPillState extends State<VideoControlPill>
         builder: (context, constraints) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
+            // START Interaction
+            onHorizontalDragStart: (_) => widget.onInteractionStart(),
             onHorizontalDragUpdate: (details) =>
                 _handleScrub(details, constraints.maxWidth),
-            onTapDown: (details) => _handleScrub(details, constraints.maxWidth),
+            // END Interaction
+            onHorizontalDragEnd: (_) => widget.onInteractionEnd(),
+            onTapDown: (details) {
+              widget.onInteractionStart();
+              _handleScrub(details, constraints.maxWidth);
+            },
+            onTapUp: (_) => widget.onInteractionEnd(),
             child: Container(
               height: 30,
               alignment: Alignment.center,
