@@ -61,6 +61,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
   List<Map<String, (String, double)>>? imageValue;
   final Map<int, Uint8List> _thumbnailCache = {};
   final Map<int, Uint8List> _fullImageCache = {};
+  final Map<int, Player> _playerCache = {};
 
   bool _showControls = true;
   Timer? _controlsTimer;
@@ -96,6 +97,10 @@ class _PhotoViewState extends ConsumerState<PhotoView>
 
   @override
   void dispose() {
+    for (var player in _playerCache.values) {
+      player.dispose();
+    }
+    _playerCache.clear();
     _controlsTimer?.cancel();
     _animationController.dispose(); // Dispose the controller
     pageController.dispose();
@@ -189,7 +194,19 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     // setState(() => _currentPage = index);
     setState(() {
       _currentPage = index;
-      _activePlayer = null; // Hide controls while swiping
+
+      // 2. Look up if we already have a player for this page in our cache
+      _activePlayer = _playerCache[index];
+
+      // If we found a player, ensure controls show up
+      if (_activePlayer != null) {
+        _showControls = true;
+        _animationController.forward();
+        _resetControlsTimer();
+      } else {
+        // No player yet (might be an image or still loading)
+        _activePlayer = null;
+      }
     });
     _resetControlsTimer();
     final indicesToLoad = [index - 2, index + 2]
@@ -249,39 +266,6 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     }
   }
 
-  // Widget _buildImageLoader(int index) {
-  //   final fullImageBytes = _fullImageCache[index];
-  //   final thumbnailBytes = _thumbnailCache[index];
-
-  //   if (fullImageBytes != null) {
-  //     return FutureBuilder<Image>(
-  //       key: ValueKey(fullImageBytes),
-  //       future: compute(_decodeImage, fullImageBytes),
-  //       builder: (context, snapshot) {
-  //         if (snapshot.hasData) return snapshot.data!;
-  //         if (thumbnailBytes != null) {
-  //           return Image.memory(thumbnailBytes,
-  //               fit: BoxFit.contain, gaplessPlayback: true);
-  //         }
-  //         return const Center(child: CupertinoActivityIndicator());
-  //       },
-  //     );
-  //   }
-
-  //   if (thumbnailBytes != null) {
-  //     _loadFullImageAtIndex(index);
-  //     return Image.memory(thumbnailBytes, fit: BoxFit.contain);
-  //   }
-
-  //   _loadThumbnailAtIndex(index);
-  //   _loadFullImageAtIndex(index);
-  //   return Center(
-  //     child: CupertinoActivityIndicator(
-  //       color: CupertinoColors.label.resolveFrom(context),
-  //     ),
-  //   );
-  // }
-
   Widget _buildImageLoader(int index) {
     // 1. Determine if this index is a video or image
     final String fileName = (imageValue != null && index < imageValue!.length)
@@ -299,9 +283,17 @@ class _PhotoViewState extends ConsumerState<PhotoView>
           key: ValueKey("video_$index"),
           videoBytes: fullBytes,
           onCreated: (player) {
-            // Only update active player if we are still on this page
+            // 3. Always store the player in the cache
+            _playerCache[index] = player;
+
+            // 4. Only update the UI if this is the page the user is actually looking at
             if (_currentPage == index) {
-              setState(() => _activePlayer = player);
+              setState(() {
+                _activePlayer = player;
+                _showControls = true;
+              });
+              _animationController.forward();
+              _resetControlsTimer();
             }
           },
         );
@@ -415,12 +407,16 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                   // LAYER 1.5: FIXED VIDEO CONTROLS
                   if (_activePlayer != null)
                     Positioned(
+                      // key: ValueKey(_activePlayer
+                      //     .hashCode), // Forces a refresh for each new player
                       bottom: 100,
                       left: 0,
                       right: 0,
                       child: VideoControlPill(
                         player: _activePlayer!,
                         visibility: _animationCurve,
+                        key: ValueKey(_activePlayer
+                            .hashCode), // Forces a refresh for each new player
                       ),
                     ),
 
