@@ -35,6 +35,9 @@ pub fn save_password(password: &str, dir: &str) -> Result<(), VaultError> {
 pub fn check_password_exist(dir: &str) -> bool {
     check_validation_data_exists(dir)
 }
+pub fn is_video(image_data: Vec<u8>) -> Result<bool, VaultError> {
+    Ok(infer::is_video(&image_data))
+}
 
 pub fn create_dir(dir: String, album_name: String) -> Result<(), VaultError> {
     match fs::create_dir(dir.clone() + "/" + &album_name) {

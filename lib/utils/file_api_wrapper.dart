@@ -169,6 +169,13 @@ mixin FileApiWrapper {
     });
   }
 
+  Future<bool> isVideoWrapper(data) async {
+    return await file_api.isVideo(imageData: data).catchError((e) {
+      debugPrint("Vault error: WARN: $e");
+      throw e;
+    });
+  }
+
   List<Map<String, (String, double)>> sortMapToList(
       Map<String, (String, double)> inputMap) {
     // Convert the map entries to a list and sort by keys

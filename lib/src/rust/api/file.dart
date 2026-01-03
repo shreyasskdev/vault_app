@@ -16,6 +16,9 @@ Future<void> savePassword({required String password, required String dir}) =>
 Future<bool> checkPasswordExist({required String dir}) =>
     RustLib.instance.api.crateApiFileCheckPasswordExist(dir: dir);
 
+Future<bool> isVideo({required List<int> imageData}) =>
+    RustLib.instance.api.crateApiFileIsVideo(imageData: imageData);
+
 Future<void> createDir({required String dir, required String albumName}) =>
     RustLib.instance.api.crateApiFileCreateDir(dir: dir, albumName: albumName);
 

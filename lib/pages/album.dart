@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:progressive_blur/progressive_blur.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
@@ -115,6 +117,46 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     }
   }
 
+  // Future<Uint8List?> _generateVideoThumbnailMediaKit(String path) async {
+  //   final player = Player();
+  //   // Attaching the controller tells MediaKit to initialize the hardware surface
+  //   VideoController(player);
+
+  //   try {
+  //     // 1. Open media (play: false is important to avoid audio blast)
+  //     await player.open(Media(path), play: false);
+
+  //     // 2. Wait for the video parameters to be initialized (Real width/height)
+  //     // This is the "Go" signal from the engine
+  //     setState(() {});
+  //     await player.stream.videoParams
+  //         .firstWhere((p) => p.w != null && p.w! > 0)
+  //         .timeout(const Duration(seconds: 5));
+  //     setState(() {});
+
+  //     // 3. Seek to get a frame (2 seconds in as you wanted)
+  //     await player.seek(const Duration(seconds: 2));
+  //     setState(() {});
+
+  //     // 4. Wait for the seek to finish. This is much faster than Future.delayed(5000)
+  //     await player.stream.position
+  //         .firstWhere((p) => p.inSeconds >= 1) // Wait until it's moved
+  //         .timeout(const Duration(seconds: 2))
+  //         .catchError((_) => Duration.zero);
+
+  //     // 5. A very small delay (200ms) just to ensure the GPU has painted the texture
+  //     await Future.delayed(const Duration(milliseconds: 200));
+
+  //     // 6. Capture
+  //     return await player.screenshot();
+  //   } catch (e) {
+  //     debugPrint("MediaKit Error: $e");
+  //     return null;
+  //   } finally {
+  //     await player.dispose(); // This also cleans up the controller
+  //   }
+  // }
+
   Future getImageFromGallery() async {
     WidgetsFlutterBinding.ensureInitialized();
 
@@ -131,18 +173,26 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     await Future.forEach(images, (image) async {
       try {
         final bytes = await image.readAsBytes();
-        if (Platform.isAndroid) {
-          await File(image.path).delete();
-        }
-        final Uint8List uint8list = Uint8List.fromList(bytes);
 
+        final Uint8List uint8list = Uint8List.fromList(bytes);
+        // final Uint8List? thumbData;
+
+        // if (await isVideoWrapper(uint8list)) {
+        // thumbData = await _generateVideoThumbnailMediaKit(image.path);
+        // if (Platform.isAndroid) {
+        // await File(image.path).delete();
+        // }
+        // await saveImageWrapper(thumbData, '$directory/${widget.name}');
+        // } else {
         await saveImageWrapper(uint8list, '$directory/${widget.name}');
+        // }
       } catch (e) {
         debugPrint("Error processing image: $e");
       }
     });
 
     _initializeAndLoadFiles();
+    setState(() {});
   }
 
   void _toggleSelectionMode(int index) {
