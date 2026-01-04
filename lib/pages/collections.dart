@@ -135,107 +135,43 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
     await getDirsAndAlbum();
   }
 
-  void createNewAlbum(context) {
+  void createNewAlbum(BuildContext context) {
     showCupertinoDialog(
       context: context,
       builder: (context) {
-        return BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: CupertinoAlertDialog(
-            // shape: const RoundedSuperellipseBorder(
-            //   borderRadius: BorderRadius.all(Radius.circular(30)),
-            // ),
-            // clipBehavior: Clip.antiAliasWithSaveLayer,
-            // contentPadding: const EdgeInsets.all(0),
-            content: SizedBox(
-              height: 150,
-              width: 300,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    height: 75,
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                    child: SizedBox(
-                      height: 43,
-                      child: CupertinoTextField(
-                        onSubmitted: (string) {
-                          createNewAlbumDirectory();
-                        },
-                        autofocus: true,
-                        autocorrect: true,
-                        // cursorColor:
-                        //     Theme.of(context).colorScheme.surfaceBright,
-                        controller: _controller,
-                        placeholder: "Create a new Album",
-                        // decoration: const InputDecoration(
-                        //   hintText: "Create a new Album",
-                        // ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    height: 75,
-                    // color: Theme.of(context).colorScheme.surfaceContainerLow,
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: SizedBox(
-                            height: 75,
-                            child: CupertinoButton.filled(
-                              padding:
-                                  EdgeInsets.zero, // Ensures text is centered
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(12)),
-                              onPressed: () {
-                                createNewAlbumDirectory();
-                              },
-                              child: const Text(
-                                "Create",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 1,
-                          child: SizedBox(
-                            height: 75,
-                            child: CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              // Optional: use systemFill for a subtle gray background
-                              color: CupertinoColors.systemFill
-                                  .resolveFrom(context),
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(12)),
-                              onPressed: () => context.pop(),
-                              child: Text(
-                                "Cancel",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                  color:
-                                      CupertinoTheme.of(context).primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  )
-                ],
-              ),
+        return CupertinoAlertDialog(
+          title: const Text("New Album"),
+          content: Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: CupertinoTextField(
+              controller: _controller,
+              placeholder: "Album Name",
+              autofocus: true,
+              clearButtonMode: OverlayVisibilityMode.editing,
+              textCapitalization: TextCapitalization.sentences,
+              onSubmitted: (string) {
+                if (string.isNotEmpty) {
+                  createNewAlbumDirectory();
+                  // Navigator.pop(context);
+                }
+              },
             ),
           ),
+          actions: [
+            CupertinoDialogAction(
+              isDefaultAction: false,
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            CupertinoDialogAction(
+              isDefaultAction: true, // This makes the text bold
+              onPressed: () {
+                createNewAlbumDirectory();
+                // Navigator.pop(context);
+              },
+              child: const Text("Create"),
+            ),
+          ],
         );
       },
     );
