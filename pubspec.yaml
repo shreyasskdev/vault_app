@@ -68,8 +68,10 @@ dependencies:
   media_kit_libs_video: ^1.0.7
   media_kit_libs_linux: any # Important for Arch setup
 
-  shelf: ^1.4.2    # TODO
-  uuid: ^4.5.2     # TODO
+  modal_bottom_sheet: ^3.0.0
+
+  # shelf: ^1.4.2    # TODO
+  # uuid: ^4.5.2     # TODO
 
 
 dev_dependencies:
