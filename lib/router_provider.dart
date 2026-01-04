@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -91,21 +92,52 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       // Path for viewing a photo
+      // GoRoute(
+      //   path: "/photo/:url/:index/:count",
+      //   pageBuilder: (context, state) {
+      //     return CustomTransitionPage(
+      //       child: PhotoView(
+      //         url: state.pathParameters["url"]!,
+      //         index: int.parse(state.pathParameters["index"]!),
+      //         count: int.parse(state.pathParameters["count"]!),
+      //       ),
+      //       transitionsBuilder:
+      //           (context, animation, secondaryAnimation, child) {
+      //         return FadeTransition(
+      //             opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
+      //                 .animate(animation),
+      //             child: child);
+      //       },
+      //     );
+      //   },
+      // ),
       GoRoute(
         path: "/photo/:url/:index/:count",
         pageBuilder: (context, state) {
+          // Decode parameters
+          final String url = Uri.decodeComponent(state.pathParameters["url"]!);
+          final int index = int.parse(state.pathParameters["index"]!);
+          final int count = int.parse(state.pathParameters["count"]!);
+
+          // Retrieve the thumbnail from 'extra'
+          // final thumbnail = state.extra; // This will be your thumbnailData type
+          final Uint8List? thumbnail = state.extra as Uint8List?;
+
           return CustomTransitionPage(
+            key: state.pageKey,
             child: PhotoView(
-              url: state.pathParameters["url"]!,
-              index: int.parse(state.pathParameters["index"]!),
-              count: int.parse(state.pathParameters["count"]!),
+              url: url,
+              index: index,
+              count: count,
+              initialThumbnail: thumbnail, // Passed back here
             ),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return FadeTransition(
-                  opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
-                      .animate(animation),
-                  child: child);
+                opacity: CurveTween(curve: Curves.fastEaseInToSlowEaseOut)
+                    .animate(animation),
+                child: child,
+              );
             },
           );
         },

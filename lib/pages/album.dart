@@ -8,6 +8,7 @@ import 'package:flutter/material.dart' show MaterialRectArcTween;
 import 'package:flutter/services.dart';
 import 'package:flutter_blurhash/flutter_blurhash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart'; // Added package
 import 'package:path_provider/path_provider.dart';
@@ -15,8 +16,6 @@ import 'package:progressive_blur/progressive_blur.dart';
 import 'package:smooth_gradient/smooth_gradient.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/utils/file_api_wrapper.dart' as fileapi;
-
-import 'photo.dart';
 
 class AlbumPage extends ConsumerStatefulWidget {
   final String name;
@@ -241,11 +240,11 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     CupertinoScaffold.showCupertinoModalBottomSheet(
       context: innerContext,
       expand: false,
-      // backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
       // topRadius: const Radius.circular(12),
       builder: (context) => CupertinoPageScaffold(
-        // backgroundColor:
-        //     CupertinoColors.systemGroupedBackground.resolveFrom(context),
+        backgroundColor:
+            CupertinoColors.systemGroupedBackground.resolveFrom(context),
         child: SafeArea(
           top: false,
           child: Column(
@@ -455,18 +454,31 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                   } else {
                     final String imageUrl =
                         Uri.encodeQueryComponent(photoDirectoryPath);
-                    Navigator.of(context)
+                    //                     context.push(
+                    //   "/photo/$encodedUrl/$index/${files.length}",
+                    //   extra: thumbnailData, // Pass the complex data here
+                    // );
+
+                    context
                         .push(
-                          CupertinoPageRoute(
-                            builder: (context) => PhotoView(
-                              url: Uri.decodeQueryComponent(imageUrl),
-                              index: index,
-                              count: files.length,
-                              initialThumbnail: thumbnailData,
-                            ),
-                          ),
-                        )
-                        .then((t) => {_initializeAndLoadFiles()});
+                      "/photo/${Uri.encodeComponent(imageUrl)}/$index/${files.length}",
+                      extra: thumbnailData, // Pass the complex data here
+                    )
+                        .then((_) async {
+                      _initializeAndLoadFiles();
+                    });
+                    // Navigator.of(context)
+                    //     .push(
+                    //       CupertinoPageRoute(
+                    //         builder: (context) => PhotoView(
+                    //           url: Uri.decodeQueryComponent(imageUrl),
+                    //           index: index,
+                    //           count: files.length,
+                    //           initialThumbnail: thumbnailData,
+                    //         ),
+                    //       ),
+                    //     )
+                    //     .then((t) => {_initializeAndLoadFiles()});
                   }
                 },
                 onLongPress: () {
