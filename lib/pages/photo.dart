@@ -371,6 +371,20 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     );
 
     return CupertinoPageScaffold(
+      // navigationBar: CupertinoNavigationBar(
+      //   enableBackgroundFilterBlur: false,
+      //   backgroundColor:
+      //       CupertinoTheme.of(context).scaffoldBackgroundColor.withAlpha(0),
+      //   border: null,
+      //   padding: EdgeInsetsDirectional.zero,
+      //   middle: Text(
+      //     "Photo",
+      //     style: TextStyle(
+      //       fontWeight: FontWeight.w600,
+      //       color: CupertinoColors.label.resolveFrom(context),
+      //     ),
+      //   ),
+      // ),
       backgroundColor:
           CupertinoTheme.of(context).scaffoldBackgroundColor.withAlpha(0),
       resizeToAvoidBottomInset: false,
@@ -447,11 +461,12 @@ class _PhotoViewState extends ConsumerState<PhotoView>
                         child: SafeArea(
                           bottom: false,
                           child: CupertinoNavigationBar(
+                            transitionBetweenRoutes: false,
+                            enableBackgroundFilterBlur: false,
                             backgroundColor: CupertinoTheme.of(context)
                                 .scaffoldBackgroundColor
                                 .withAlpha(0),
                             border: null,
-                            enableBackgroundFilterBlur: false,
                             padding: EdgeInsetsDirectional.zero,
                             middle: Text(
                               "Photo",

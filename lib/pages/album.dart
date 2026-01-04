@@ -528,11 +528,11 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
           data: themeData,
           child: CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
+              enableBackgroundFilterBlur: false,
               backgroundColor: CupertinoTheme.of(context)
                   .scaffoldBackgroundColor
                   .withAlpha(0),
               border: null,
-              enableBackgroundFilterBlur: false,
               leading: _isSelectionMode
                   ? CupertinoButton(
                       padding: EdgeInsets.zero,
