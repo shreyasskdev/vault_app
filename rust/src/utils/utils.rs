@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{BufReader, Read},
     path::Path,
 };
@@ -53,4 +53,14 @@ pub fn verify_and_get_decrypter(
         Ok(decrypted_contet) if decrypted_contet == VERIFICATION_DATA => Ok(decrypter),
         _ => Err(VaultError::IncorrectPassword),
     }
+}
+
+pub fn rename_with_parent(from: &Path, to: &Path) -> Result<(), VaultError> {
+    if let Some(parent) = to.parent() {
+        fs::create_dir_all(parent).map_err(|e| VaultError::Error(e.to_string()))?;
+    }
+
+    fs::rename(from, to).map_err(|e| VaultError::Error(e.to_string()))?;
+
+    Ok(())
 }

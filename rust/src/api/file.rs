@@ -23,6 +23,7 @@ use crate::utils::encryption::{
 use crate::utils::cache::cache_image;
 // Utils
 use crate::utils::utils::generate_unique_filename;
+use crate::utils::utils::rename_with_parent;
 
 use infer;
 
@@ -237,6 +238,44 @@ pub fn delete_file(path: &str) -> Result<(), VaultError> {
 
     if hash_file.exists() {
         remove_file(&hash_file).map_err(|e| VaultError::Error(e.to_string()))?;
+    }
+
+    Ok(())
+}
+
+pub fn move_file(source_file: &str, dest_dir: &str) -> Result<(), VaultError> {
+    let source_path = Path::new(source_file);
+    let source_name = source_path.file_name().unwrap();
+
+    let dest_dir_path = Path::new(dest_dir);
+
+    let mut dest_file = PathBuf::from(dest_dir_path);
+    dest_file.push(source_name);
+
+    let parent_folder = source_path.parent().unwrap();
+
+    let mut thumbs_file = PathBuf::from(parent_folder);
+    thumbs_file.push(".thumbs");
+    thumbs_file.push(source_name);
+
+    let mut dest_thumb_file = PathBuf::from(dest_dir_path);
+    dest_thumb_file.push(".thumbs");
+    dest_thumb_file.push(source_name);
+
+    let mut hash_file = PathBuf::from(parent_folder);
+    hash_file.push(".hash");
+    hash_file.push(source_name);
+
+    let mut dest_hash_file = PathBuf::from(dest_dir_path);
+    dest_hash_file.push(".hash");
+    dest_hash_file.push(source_name);
+
+    rename_with_parent(source_path, dest_file.as_path())?;
+    if thumbs_file.exists() {
+        rename_with_parent(thumbs_file.as_path(), dest_thumb_file.as_path())?;
+    }
+    if hash_file.exists() {
+        rename_with_parent(hash_file.as_path(), dest_hash_file.as_path())?;
     }
 
     Ok(())

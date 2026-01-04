@@ -114,6 +114,12 @@ mixin FileApiWrapper {
         .catchError((e) => debugPrint("Vault error: WARN: $e"));
   }
 
+  Future<void> moveFileWrapper(String sourceFile, String destDir) async {
+    return await file_api
+        .moveFile(sourceFile: sourceFile, destDir: destDir)
+        .catchError((e) => debugPrint("Vault error: WARN: $e"));
+  }
+
   Future<bool> setPasswordWrapper(password, dir) async {
     return await file_api
         .setPassword(password: password, dir: dir)

@@ -64,6 +64,7 @@ class ImageCache extends ChangeNotifier {
   final Map<String, Uint8List> _cachedImages = {};
   final Map<String, Uint8List> _cachedThumbImages = {};
   final int _maxCacheSize = 50;
+  final int _maxThumbCacheSize = 100;
 
   // Uint8List? getImage(String imageId) => _cachedImages[imageId];
   Map<String, Uint8List> get cachedImage => _cachedImages;
@@ -79,10 +80,14 @@ class ImageCache extends ChangeNotifier {
   }
 
   void addThumbImage(String imageId, Uint8List decryptedBytes) {
-    if (_cachedImages.length >= _maxCacheSize) {
+    if (_cachedThumbImages.length >= _maxThumbCacheSize) {
       _cachedThumbImages.remove(_cachedThumbImages.keys.first);
     }
     _cachedThumbImages[imageId] = decryptedBytes;
+  }
+
+  void clearThumbCache() {
+    _cachedThumbImages.clear();
   }
 }
 

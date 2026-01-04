@@ -323,15 +323,19 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     Directory appDocDir = await getApplicationDocumentsDirectory();
     final String destPath = '${appDocDir.path}/Collections/$destinationAlbum';
 
+    // final imageCache = ref.read(imageCacheProvider);
+
     for (int index in _selectedIndices) {
       final fileName = files[index].keys.first;
       final sourceFile = File("$photoDirectoryPath/$fileName");
-      final destinationFile = File("$destPath/$fileName");
+      // final destinationFile = File("$destPath/$fileName");
 
       try {
-        if (await sourceFile.exists()) {
-          await sourceFile.rename(destinationFile.path);
-        }
+        // if (await sourceFile.exists()) {
+        //   await sourceFile.rename(destinationFile.path);
+        // }
+        await moveFileWrapper(sourceFile.path, destPath);
+        // imageCache.clearThumbCache();
       } catch (e) {
         debugPrint("Error moving file: $e");
       }
