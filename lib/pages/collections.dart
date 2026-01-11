@@ -30,7 +30,7 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
   String? appDirectoryPath;
   List<Map<String, (String, double)>?>? imageValue;
 
-  final Map<int, Uint8List> _thumbnailCache = {};
+  // final Map<int, Uint8List> _thumbnailCache = {};
 
   bool _isSelectionMode = false;
   final Set<int> _selectedIndices = {};
@@ -98,28 +98,28 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
     }
   }
 
-  Future<void> _loadAlbumThumbnail(int index) async {
-    if (_thumbnailCache.containsKey(index) ||
-        appDirectoryPath == null ||
-        imageValue == null ||
-        imageValue![index] == null) {
-      return;
-    }
+  // Future<void> _loadAlbumThumbnail(int index) async {
+  //   if (_thumbnailCache.containsKey(index) ||
+  //       appDirectoryPath == null ||
+  //       imageValue == null ||
+  //       imageValue![index] == null) {
+  //     return;
+  //   }
 
-    try {
-      final imageData = await getFileThumbWrapper(
-          "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}",
-          ref);
+  //   try {
+  //     final imageData = await getFileThumbWrapper(
+  //         "$appDirectoryPath/${directories?[index]}/${imageValue![index]!.keys.first}",
+  //         ref);
 
-      if (mounted && !_thumbnailCache.containsKey(index)) {
-        setState(() {
-          _thumbnailCache[index] = Uint8List.fromList(imageData);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading album thumbnail for index $index: $e");
-    }
-  }
+  //     if (mounted && !_thumbnailCache.containsKey(index)) {
+  //       setState(() {
+  //         _thumbnailCache[index] = Uint8List.fromList(imageData);
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error loading album thumbnail for index $index: $e");
+  //   }
+  // }
 
   Future<void> createNewAlbumDirectory() async {
     if (appDirectoryPath == null) await initAppDir();
@@ -290,10 +290,21 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
           return const Center(child: CupertinoActivityIndicator());
         }
 
-        final isSelected = _selectedIndices.contains(index);
-        // Get thumbnail data directly from cache.
-        final thumbnailData = _thumbnailCache[index];
+        // final isSelected = _selectedIndices.contains(index);
+        // // Get thumbnail data directly from cache.
+        // final thumbnailData = _thumbnailCache[index];
+        // final albumInfo = imageValue![index];
+
+        final albumName = directories![index];
         final albumInfo = imageValue![index];
+        final isSelected = _selectedIndices.contains(index);
+        // Calculate paths for the child card
+        String? thumbPath;
+        String? blurHash;
+        if (albumInfo != null && albumInfo.isNotEmpty) {
+          thumbPath = "$appDirectoryPath/$albumName/${albumInfo.keys.first}";
+          blurHash = albumInfo.values.first.$1;
+        }
 
         return GestureDetector(
           onTap: () {
@@ -310,109 +321,12 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
               toggleSelectionMode(index);
             }
           },
-          child: Stack(
-            children: [
-              ClipRSuperellipse(
-                borderRadius: BorderRadius.circular(20),
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (thumbnailData != null)
-                      Image.memory(
-                        thumbnailData,
-                        gaplessPlayback: true,
-                        fit: BoxFit.cover,
-                      )
-                    else if (albumInfo != null && albumInfo.values.isNotEmpty)
-                      Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          BlurHash(hash: albumInfo.values.first.$1),
-                          Builder(builder: (context) {
-                            _loadAlbumThumbnail(index);
-                            return const SizedBox.shrink();
-                          })
-                        ],
-                      )
-                    else
-                      Container(
-                        color: CupertinoColors.systemGroupedBackground
-                            .resolveFrom(context),
-                        child: const Center(child: Text("Empty")),
-                      ),
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            CupertinoTheme.of(context)
-                                .scaffoldBackgroundColor
-                                .withAlpha(0),
-                            CupertinoTheme.of(context).scaffoldBackgroundColor
-                          ],
-                        ),
-                      ),
-                      alignment: Alignment.bottomRight,
-                      padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
-                      child: Text(
-                        directories![index].split("/").last,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.fade,
-                        maxLines: 1,
-                        softWrap: false,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_isSelectionMode)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      // color: isSelected
-                      //     ? Theme.of(context).colorScheme.onSurface
-                      //     : Colors.transparent,
-                      color: isSelected
-                          ? CupertinoTheme.of(context).primaryColor
-                          : CupertinoColors.systemFill.resolveFrom(context),
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              if (_isSelectionMode)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? CupertinoTheme.of(context).primaryColor
-                          : CupertinoColors.secondaryLabel.resolveFrom(context),
-                      border: Border.all(
-                        color: isSelected
-                            ? CupertinoTheme.of(context).primaryColor
-                            : CupertinoColors.systemFill.resolveFrom(context),
-                        width: 2,
-                      ),
-                    ),
-                    child: isSelected
-                        ? Icon(
-                            CupertinoIcons.check_mark,
-                            size: 16,
-                            color: CupertinoTheme.of(context)
-                                .scaffoldBackgroundColor,
-                          )
-                        : null,
-                  ),
-                ),
-            ],
+          child: AlbumThumbnailCard(
+            albumName: albumName,
+            thumbPath: thumbPath,
+            blurHash: blurHash,
+            isSelected: isSelected,
+            isSelectionMode: _isSelectionMode,
           ),
         );
       },
@@ -513,4 +427,189 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
       return mainScaffold;
     }
   }
+}
+
+/// Specialized widget for Album Card to isolate rebuilds
+class AlbumThumbnailCard extends ConsumerWidget with fileapi.FileApiWrapper {
+  final String albumName;
+  final String? thumbPath;
+  final String? blurHash;
+  final bool isSelected;
+  final bool isSelectionMode;
+
+  const AlbumThumbnailCard({
+    super.key,
+    required this.albumName,
+    this.thumbPath,
+    this.blurHash,
+    required this.isSelected,
+    required this.isSelectionMode,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch ONLY this specific thumbnail path in the global cache
+    final imageData = thumbPath == null
+        ? null
+        : ref.watch(
+            imageCacheProvider.select((c) => c.cachedThumbImage[thumbPath]));
+
+    if (imageData == null && thumbPath != null) {
+      Future.microtask(() => getFileThumbWrapper(thumbPath!, ref));
+    }
+
+    return Stack(
+      children: [
+        ClipRSuperellipse(
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (imageData != null)
+                Image.memory(
+                  imageData,
+                  gaplessPlayback: true,
+                  fit: BoxFit.cover,
+                )
+              else if (blurHash != null)
+                Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    BlurHash(hash: blurHash!),
+                    // Builder(builder: (context) {
+                    //   // _loadAlbumThumbnail(index);
+                    //   return const SizedBox.shrink();
+                    // })
+                    const SizedBox
+                        .shrink() // Fixed: Cleaned up unnecessary Builder
+                  ],
+                )
+              else
+                Container(
+                  color: CupertinoColors.systemGroupedBackground
+                      .resolveFrom(context),
+                  child: const Center(child: Text("Empty")),
+                ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      CupertinoTheme.of(context)
+                          .scaffoldBackgroundColor
+                          .withAlpha(0),
+                      CupertinoTheme.of(context).scaffoldBackgroundColor
+                    ],
+                  ),
+                ),
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.fromLTRB(15, 0, 15, 5),
+                child: Text(
+                  albumName.split("/").last,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.fade,
+                  maxLines: 1,
+                  softWrap: false,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (isSelectionMode)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              border: Border.all(
+                // color: isSelected
+                //     ? Theme.of(context).colorScheme.onSurface
+                //     : Colors.transparent,
+                color: isSelected
+                    ? CupertinoTheme.of(context).primaryColor
+                    : CupertinoColors.systemFill.resolveFrom(context),
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        if (isSelectionMode)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? CupertinoTheme.of(context).primaryColor
+                    : CupertinoColors.secondaryLabel.resolveFrom(context),
+                border: Border.all(
+                  color: isSelected
+                      ? CupertinoTheme.of(context).primaryColor
+                      : CupertinoColors.systemFill.resolveFrom(context),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(
+                      CupertinoIcons.check_mark,
+                      size: 16,
+                      color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+                    )
+                  : null,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Widget _buildLabel(BuildContext context) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       gradient: LinearGradient(
+  //         begin: Alignment.topCenter,
+  //         end: Alignment.bottomCenter,
+  //         colors: [
+  //           CupertinoColors.transparent,
+  //           CupertinoColors.black.withOpacity(0.7)
+  //         ],
+  //       ),
+  //     ),
+  //     alignment: Alignment.bottomLeft,
+  //     padding: const EdgeInsets.all(12),
+  //     child: Text(
+  //       albumName,
+  //       style: const TextStyle(
+  //           fontWeight: FontWeight.bold, color: CupertinoColors.white),
+  //       maxLines: 1,
+  //       overflow: TextOverflow.ellipsis,
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildSelectionOverlay(BuildContext context) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(20),
+  //       border: Border.all(
+  //         color: isSelected
+  //             ? CupertinoTheme.of(context).primaryColor
+  //             : CupertinoColors.transparent,
+  //         width: 3,
+  //       ),
+  //     ),
+  //     child: isSelected
+  //         ? const Align(
+  //             alignment: Alignment.topRight,
+  //             child: Padding(
+  //               padding: EdgeInsets.all(8.0),
+  //               child: Icon(CupertinoIcons.checkmark_circle_fill,
+  //                   color: CupertinoColors.activeBlue),
+  //             ),
+  //           )
+  //         : null,
+  //   );
+  // }
 }

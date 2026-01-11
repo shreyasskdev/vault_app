@@ -5,6 +5,8 @@ import 'package:vault/src/rust/api/file.dart' as file_api;
 import 'package:vault/src/rust/frb_generated.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+final Set<String> _pendingRequests = {};
+
 mixin FileApiWrapper {
   Future<void> createDirWrapper(path, albumname) async {
     try {
@@ -87,16 +89,40 @@ mixin FileApiWrapper {
     return data;
   }
 
+  // Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
+  //   final imageCache = ref.read(imageCacheProvider);
+  //   final cachedImage = imageCache.cachedThumbImage[path];
+  //   if (cachedImage != null) return cachedImage;
+
+  //   final pool = await ref.read(isolatePoolProvider.future);
+  //   final data = await pool.scheduleJob(GetFileThumbJob(path));
+
+  //   imageCache.addThumbImage(path, data);
+  //   return data;
+  // }
   Future<Uint8List> getFileThumbWrapper(String path, WidgetRef ref) async {
     final imageCache = ref.read(imageCacheProvider);
+
+    // 1. Check if it's already in cache
     final cachedImage = imageCache.cachedThumbImage[path];
     if (cachedImage != null) return cachedImage;
 
-    final pool = await ref.read(isolatePoolProvider.future);
-    final data = await pool.scheduleJob(GetFileThumbJob(path));
+    // 2. NEW: Check if we are already fetching this specific path
+    if (_pendingRequests.contains(path)) return Uint8List(0);
+    _pendingRequests.add(path);
 
-    imageCache.addThumbImage(path, data);
-    return data;
+    try {
+      final pool = await ref.read(isolatePoolProvider.future);
+      final data = await pool.scheduleJob(GetFileThumbJob(path));
+
+      if (data.isNotEmpty) {
+        imageCache.addThumbImage(path, data);
+      }
+      return data;
+    } finally {
+      // 3. Always remove from pending when done
+      _pendingRequests.remove(path);
+    }
   }
 
   Future<void> saveImageWrapper(data, path) async {

@@ -41,8 +41,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
   late final ScrollController _scrollController;
   bool _isGradientVisible = false;
 
-  final Map<int, Uint8List> _thumbnailCache = {};
-  bool _isThumbnailLoading = false;
+  // final Map<int, Uint8List> _thumbnailCache = {};
+  // bool _isThumbnailLoading = false;
 
   @override
   void initState() {
@@ -91,46 +91,46 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       setState(() {
         files = sortMapToList(imageList);
       });
-      _loadAllThumbnails();
+      // _loadAllThumbnails();
     }
   }
 
-  Future<void> _loadAllThumbnails() async {
-    if (_isThumbnailLoading || files.isEmpty) return;
-    _isThumbnailLoading = true;
+  // Future<void> _loadAllThumbnails() async {
+  //   if (_isThumbnailLoading || files.isEmpty) return;
+  //   _isThumbnailLoading = true;
 
-    final List<Future<void>> thumbnailFutures = [];
-    for (int i = 0; i < files.length; i++) {
-      if (!_thumbnailCache.containsKey(i)) {
-        thumbnailFutures.add(_loadThumbnailAtIndex(i));
-      }
-    }
+  //   final List<Future<void>> thumbnailFutures = [];
+  //   for (int i = 0; i < files.length; i++) {
+  //     if (!_thumbnailCache.containsKey(i)) {
+  //       thumbnailFutures.add(_loadThumbnailAtIndex(i));
+  //     }
+  //   }
 
-    await Future.wait(thumbnailFutures);
+  //   await Future.wait(thumbnailFutures);
 
-    if (mounted) {
-      setState(() {
-        _isThumbnailLoading = false;
-      });
-    }
-  }
+  //   if (mounted) {
+  //     setState(() {
+  //       _isThumbnailLoading = false;
+  //     });
+  //   }
+  // }
 
-  Future<void> _loadThumbnailAtIndex(int index) async {
-    if (_thumbnailCache.containsKey(index) || files.isEmpty) return;
+  // Future<void> _loadThumbnailAtIndex(int index) async {
+  //   if (_thumbnailCache.containsKey(index) || files.isEmpty) return;
 
-    try {
-      final imagePath = "$photoDirectoryPath/${files[index].keys.first}";
-      final imageData = await getFileThumbWrapper(imagePath, ref);
+  //   try {
+  //     final imagePath = "$photoDirectoryPath/${files[index].keys.first}";
+  //     final imageData = await getFileThumbWrapper(imagePath, ref);
 
-      if (mounted && !_thumbnailCache.containsKey(index)) {
-        setState(() {
-          _thumbnailCache[index] = Uint8List.fromList(imageData);
-        });
-      }
-    } catch (e) {
-      debugPrint("Error loading thumbnail for index $index: $e");
-    }
-  }
+  //     if (mounted && !_thumbnailCache.containsKey(index)) {
+  //       setState(() {
+  //         _thumbnailCache[index] = Uint8List.fromList(imageData);
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint("Error loading thumbnail for index $index: $e");
+  //   }
+  // }
 
   Future getImageFromGallery() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -145,6 +145,9 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
       try {
         final bytes = await image.readAsBytes();
         final Uint8List uint8list = Uint8List.fromList(bytes);
+        if (Platform.isAndroid) {
+          await File(image.path).delete();
+        }
         await saveImageWrapper(uint8list, '$directory/${widget.name}');
       } catch (e) {
         debugPrint("Error processing image: $e");
@@ -328,12 +331,8 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
     for (int index in _selectedIndices) {
       final fileName = files[index].keys.first;
       final sourceFile = File("$photoDirectoryPath/$fileName");
-      // final destinationFile = File("$destPath/$fileName");
 
       try {
-        // if (await sourceFile.exists()) {
-        //   await sourceFile.rename(destinationFile.path);
-        // }
         await moveFileWrapper(sourceFile.path, destPath);
         // imageCache.clearThumbCache();
       } catch (e) {
@@ -447,12 +446,17 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
           ),
           itemCount: files.length,
           itemBuilder: (BuildContext context, int index) {
-            final isSelected = _selectedIndices.contains(index);
-            final thumbnailData = _thumbnailCache[index];
+            // final isSelected = _selectedIndices.contains(index);
+            // final thumbnailData = _thumbnailCache[index];
+            final fileName = files[index].keys.first;
+            final String path = "$photoDirectoryPath/$fileName";
+            final String blurHash = files[index].values.first.$1;
 
             return RepaintBoundary(
               child: GestureDetector(
                 onTap: () {
+                  final thumbData =
+                      ref.read(imageCacheProvider).cachedThumbImage[path];
                   if (_isSelectionMode) {
                     _toggleSelection(index);
                   } else {
@@ -466,7 +470,7 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                     context
                         .push(
                       "/photo/${Uri.encodeComponent(imageUrl)}/$index/${files.length}",
-                      extra: thumbnailData, // Pass the complex data here
+                      extra: thumbData, // Pass the complex data here
                     )
                         .then((_) async {
                       _initializeAndLoadFiles();
@@ -494,45 +498,51 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
                       MaterialRectArcTween(begin: begin, end: end),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (thumbnailData != null)
-                          Image.memory(thumbnailData,
-                              gaplessPlayback: true, fit: BoxFit.cover)
-                        else
-                          BlurHash(hash: files[index].values.first.$1),
-                        if (_isSelectionMode)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isSelected
-                                    ? CupertinoTheme.of(context).primaryColor
-                                    : CupertinoColors.secondaryLabel
-                                        .resolveFrom(context),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? CupertinoTheme.of(context).primaryColor
-                                      : CupertinoColors.systemFill
-                                          .resolveFrom(context),
-                                  width: 2,
-                                ),
-                              ),
-                              child: isSelected
-                                  ? Icon(CupertinoIcons.check_mark,
-                                      size: 16,
-                                      color: CupertinoTheme.of(context)
-                                          .scaffoldBackgroundColor)
-                                  : null,
-                            ),
-                          ),
-                      ],
+                    child: ThumbnailImage(
+                      path: path,
+                      blurHash: blurHash,
+                      isSelected: _selectedIndices.contains(index),
+                      isSelectionMode: _isSelectionMode,
                     ),
+                    // Stack(
+                    //   fit: StackFit.expand,
+                    //   children: [
+                    //     if (thumbnailData != null)
+                    //       Image.memory(thumbnailData,
+                    //           gaplessPlayback: true, fit: BoxFit.cover)
+                    //     else
+                    //       BlurHash(hash: files[index].values.first.$1),
+                    //     if (_isSelectionMode)
+                    //       Positioned(
+                    //         top: 10,
+                    //         right: 10,
+                    //         child: Container(
+                    //           width: 24,
+                    //           height: 24,
+                    //           decoration: BoxDecoration(
+                    //             shape: BoxShape.circle,
+                    //             color: isSelected
+                    //                 ? CupertinoTheme.of(context).primaryColor
+                    //                 : CupertinoColors.secondaryLabel
+                    //                     .resolveFrom(context),
+                    //             border: Border.all(
+                    //               color: isSelected
+                    //                   ? CupertinoTheme.of(context).primaryColor
+                    //                   : CupertinoColors.systemFill
+                    //                       .resolveFrom(context),
+                    //               width: 2,
+                    //             ),
+                    //           ),
+                    //           child: isSelected
+                    //               ? Icon(CupertinoIcons.check_mark,
+                    //                   size: 16,
+                    //                   color: CupertinoTheme.of(context)
+                    //                       .scaffoldBackgroundColor)
+                    //               : null,
+                    //         ),
+                    //       ),
+                    //   ],
+                    // ),
                   ),
                 ),
               ),
@@ -625,6 +635,72 @@ class _AlbumPageState extends ConsumerState<AlbumPage>
           ),
         );
       }),
+    );
+  }
+}
+
+/// A smart widget that handles its own encrypted image loading and caching
+class ThumbnailImage extends ConsumerWidget with fileapi.FileApiWrapper {
+  final String path;
+  final String blurHash;
+  final bool isSelected;
+  final bool isSelectionMode;
+
+  const ThumbnailImage({
+    super.key,
+    required this.path,
+    required this.blurHash,
+    required this.isSelected,
+    required this.isSelectionMode,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // final cache = ref.watch(imageCacheProvider);
+    // final imageData = cache.cachedThumbImage[path];
+    final imageData = ref.watch(imageCacheProvider.select(
+      (cache) => cache.cachedThumbImage[path],
+    ));
+
+    // If not in cache, trigger the fetch
+    if (imageData == null) {
+      Future.microtask(() => getFileThumbWrapper(path, ref));
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (imageData != null)
+          Image.memory(imageData, gaplessPlayback: true, fit: BoxFit.cover)
+        else
+          BlurHash(hash: blurHash),
+        if (isSelectionMode)
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isSelected
+                    ? CupertinoTheme.of(context).primaryColor
+                    : CupertinoColors.secondaryLabel.resolveFrom(context),
+                border: Border.all(
+                  color: isSelected
+                      ? CupertinoTheme.of(context).primaryColor
+                      : CupertinoColors.systemFill.resolveFrom(context),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Icon(CupertinoIcons.check_mark,
+                      size: 16,
+                      color: CupertinoTheme.of(context).scaffoldBackgroundColor)
+                  : null,
+            ),
+          ),
+      ],
     );
   }
 }

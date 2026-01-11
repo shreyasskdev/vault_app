@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -70,6 +71,8 @@ class ImageCache extends ChangeNotifier {
   Map<String, Uint8List> get cachedImage => _cachedImages;
   Map<String, Uint8List> get cachedThumbImage => _cachedThumbImages;
 
+  Timer? _throttle; // Timer for batching notifications
+
   void addImage(String imageId, Uint8List decryptedBytes) {
     if (_cachedImages.length >= _maxCacheSize) {
       // Remove the oldest entry (LRU logic can be added if needed)
@@ -79,15 +82,41 @@ class ImageCache extends ChangeNotifier {
     // notifyListeners(); // Optional: Only if UI needs immediate update
   }
 
+  // void addThumbImage(String imageId, Uint8List decryptedBytes) {
+  //   if (_cachedThumbImages.length >= _maxThumbCacheSize) {
+  //     _cachedThumbImages.remove(_cachedThumbImages.keys.first);
+  //   }
+  //   _cachedThumbImages[imageId] = decryptedBytes;
+  //   notifyListeners(); // Optional: Only if UI needs immediate update
+  // }
+
   void addThumbImage(String imageId, Uint8List decryptedBytes) {
+    if (_cachedThumbImages.containsKey(imageId)) return;
+
+    // FIX 1: Keep the cache limit check!
     if (_cachedThumbImages.length >= _maxThumbCacheSize) {
       _cachedThumbImages.remove(_cachedThumbImages.keys.first);
     }
+
     _cachedThumbImages[imageId] = decryptedBytes;
+
+    // --- BATCHING LOGIC ---
+    if (_throttle?.isActive ?? false) return;
+
+    _throttle = Timer(const Duration(milliseconds: 50), () {
+      notifyListeners();
+    });
   }
 
   void clearThumbCache() {
     _cachedThumbImages.clear();
+  }
+
+  // Also clean up timer on dispose
+  @override
+  void dispose() {
+    _throttle?.cancel();
+    super.dispose();
   }
 }
 
