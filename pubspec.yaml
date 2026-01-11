@@ -45,7 +45,7 @@ dependencies:
   photo_view: ^0.15.0
   flutter_blurhash: ^0.8.2
 
-  flutter_displaymode: ^0.6.0
+  flutter_displaymode: ^0.7.0
 
   sensors_plus: ^3.1.0
   local_auth: ^2.1.8

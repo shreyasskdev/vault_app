@@ -13,8 +13,12 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await RustLib.init();
-  await ProgressiveBlurWidget.precache();
+  // await RustLib.init();
+  // await ProgressiveBlurWidget.precache();
+  await Future.wait([
+    RustLib.init(),
+    ProgressiveBlurWidget.precache(),
+  ]);
   MediaKit.ensureInitialized();
   // ProgressiveBlurWidget.precache();
 

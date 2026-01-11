@@ -375,43 +375,47 @@ class _CollectionsPageState extends ConsumerState<CollectionsPage>
                 )),
       child: Stack(
         children: [
-          ref.watch(settingsModelProvider).advancedTextures
-              ? ProgressiveBlurWidget(
-                  linearGradientBlur: const LinearGradientBlur(
-                    values: [1, 0],
-                    stops: [0, 0.2],
-                    start: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  sigma: _isGradientVisible ? 24.0 : 0,
-                  blurTextureDimensions: 128,
-                  child: gridView)
-              : gridView,
+          RepaintBoundary(
+            child: ref.watch(settingsModelProvider).advancedTextures
+                ? ProgressiveBlurWidget(
+                    linearGradientBlur: const LinearGradientBlur(
+                      values: [1, 0],
+                      stops: [0, 0.2],
+                      start: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                    sigma: _isGradientVisible ? 24.0 : 0,
+                    blurTextureDimensions: 128,
+                    child: gridView)
+                : gridView,
+          ),
           IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: _isGradientVisible ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.fastEaseInToSlowEaseOut,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  gradient: SmoothGradient(
-                    // from: Theme.of(context).colorScheme.surface.withAlpha(
-                    //     !kIsWeb && (Platform.isAndroid || Platform.isIOS)
-                    //         ? 255
-                    //         : 220),
-                    from: CupertinoTheme.of(context)
-                        .scaffoldBackgroundColor
-                        .withAlpha(
-                            !kIsWeb && (Platform.isAndroid || Platform.isIOS)
-                                ? 255
-                                : 220),
-                    to: CupertinoTheme.of(context)
-                        .scaffoldBackgroundColor
-                        .withAlpha(0),
-                    curve: const Cubic(.05, .26, 1, .55),
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+            child: RepaintBoundary(
+              child: AnimatedOpacity(
+                opacity: _isGradientVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.fastEaseInToSlowEaseOut,
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    gradient: SmoothGradient(
+                      // from: Theme.of(context).colorScheme.surface.withAlpha(
+                      //     !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                      //         ? 255
+                      //         : 220),
+                      from: CupertinoTheme.of(context)
+                          .scaffoldBackgroundColor
+                          .withAlpha(
+                              !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+                                  ? 255
+                                  : 220),
+                      to: CupertinoTheme.of(context)
+                          .scaffoldBackgroundColor
+                          .withAlpha(0),
+                      curve: const Cubic(.05, .26, 1, .55),
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
                 ),
               ),
