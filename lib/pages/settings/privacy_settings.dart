@@ -195,9 +195,10 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                             final isCorrect = await checkZipPasswordWrapper(
                                 zipPath, passwordController.text);
                             if (isCorrect) {
-                              if (context.mounted)
+                              if (context.mounted) {
                                 Navigator.of(context)
                                     .pop(passwordController.text);
+                              }
                             } else {
                               setState(() {
                                 isChecking = false;
@@ -299,8 +300,10 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                       menuSpacing: 16.0,
                       children: [
                         MenuItemToggle(
-                          icon: CupertinoIcons.device_phone_portrait,
-                          iconColor: CupertinoColors.systemIndigo,
+                          // CHANGED: bell_circle_fill or waveform_path_ecg represents motion/alarm better
+                          icon: CupertinoIcons.bell_circle_fill,
+                          iconColor:
+                              CupertinoColors.systemRed, // Red for Alarms/Theft
                           title: "Theft Protection",
                           subtitle: "Alerts based on device gyroscope",
                           value:
@@ -308,6 +311,20 @@ class _PrivacySettingsState extends ConsumerState<PrivacySettings>
                           onChanged: (value) => ref
                               .read(settingsModelProvider)
                               .toggleTheftProtection(),
+                          divider: true,
+                        ),
+                        MenuItemToggle(
+                          // CHANGED: eye_slash_fill is the gold standard for Privacy
+                          icon: CupertinoIcons.eye_slash_fill,
+                          iconColor: CupertinoColors
+                              .systemBlue, // Blue for Privacy/System
+                          title: "Privacy Screen",
+                          subtitle:
+                              "Prevents screenshots, screen recording, and recent-apps previews",
+                          value: ref.watch(settingsModelProvider).secureContent,
+                          onChanged: (value) => ref
+                              .read(settingsModelProvider)
+                              .toggleSecureContent(),
                           divider: false,
                         ),
                       ],

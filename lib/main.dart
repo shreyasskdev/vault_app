@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:progressive_blur/progressive_blur.dart';
+import 'package:secure_content/secure_content.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vault/providers.dart';
 import 'package:vault/router_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -13,8 +15,13 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await RustLib.init();
-  // await ProgressiveBlurWidget.precache();
+
+  if (!kIsWeb && Platform.isAndroid) {
+    final prefs = await SharedPreferences.getInstance();
+    final isSecure = prefs.getBool('secureContent') ?? true;
+    SecureContent().preventScreenshotAndroid(isSecure);
+  }
+
   await Future.wait([
     RustLib.init(),
     ProgressiveBlurWidget.precache(),

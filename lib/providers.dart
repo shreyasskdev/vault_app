@@ -4,18 +4,23 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isolate_pool_2/isolate_pool_2.dart';
+import 'package:secure_content/secure_content.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsModel extends ChangeNotifier {
+  final secureContentPlugin = SecureContent();
+
   // private vars with default values
   bool _darkMode = true;
   bool _theftProtection = false;
   bool _advancedTextures = false;
+  bool _secureContent = true;
 
   // Getter for private variables
   bool get darkmode => _darkMode;
   bool get theftProtection => _theftProtection;
   bool get advancedTextures => _advancedTextures;
+  bool get secureContent => _secureContent;
 
   // Constructor that triggers loading the settings
   SettingsModel() {
@@ -29,6 +34,7 @@ class SettingsModel extends ChangeNotifier {
     _darkMode = prefs.getBool('darkMode') ?? true;
     _theftProtection = prefs.getBool('theftProtection') ?? true;
     _advancedTextures = prefs.getBool('advancedTextures') ?? false;
+    _secureContent = prefs.getBool('secureContent') ?? true;
 
     notifyListeners();
   }
@@ -51,6 +57,18 @@ class SettingsModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _advancedTextures = !_advancedTextures;
     await prefs.setBool('advancedTextures', _advancedTextures);
+    notifyListeners();
+  }
+
+  Future<void> toggleSecureContent() async {
+    final prefs = await SharedPreferences.getInstance();
+    _secureContent = !_secureContent;
+
+    if (Platform.isAndroid) {
+      secureContentPlugin.preventScreenshotAndroid(_secureContent);
+    }
+
+    await prefs.setBool('secureContent', _secureContent);
     notifyListeners();
   }
 }

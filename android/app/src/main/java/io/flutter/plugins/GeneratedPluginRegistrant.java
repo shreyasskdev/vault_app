@@ -36,6 +36,11 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin image_picker_android, io.flutter.plugins.imagepicker.ImagePickerPlugin", e);
     }
     try {
+      flutterEngine.getPlugins().add(new dev.flutter.plugins.integration_test.IntegrationTestPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin integration_test, dev.flutter.plugins.integration_test.IntegrationTestPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.localauth.LocalAuthPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin local_auth_android, io.flutter.plugins.localauth.LocalAuthPlugin", e);
@@ -59,6 +64,21 @@ public final class GeneratedPluginRegistrant {
       flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin path_provider_android, io.flutter.plugins.pathprovider.PathProviderPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new id.nizwar.screen_capture_event.ScreenCaptureEventPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin screen_capture_event, id.nizwar.screen_capture_event.ScreenCaptureEventPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.prongbang.screen_protector.ScreenProtectorPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin screen_protector, com.prongbang.screen_protector.ScreenProtectorPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.codenameakshay.secure_content.SecureContentPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin secure_content, com.codenameakshay.secure_content.SecureContentPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.sensors.SensorsPlugin());

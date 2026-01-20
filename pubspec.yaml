@@ -70,6 +70,8 @@ dependencies:
 
   modal_bottom_sheet: ^3.0.0
 
+  secure_content: ^1.0.1
+
   # shelf: ^1.4.2    # TODO
   # uuid: ^4.5.2     # TODO
 
