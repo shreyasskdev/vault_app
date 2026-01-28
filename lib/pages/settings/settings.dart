@@ -2,16 +2,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vault/widget/menu_item.dart';
 
+import 'package:vault/utils/auth_serrvices.dart'; // Added
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
+
 // --- SETTINGS PAGE ---
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   static const double _menuSpacing = 16.0;
   static const double _borderRadius = 20.0;
 
@@ -56,7 +59,22 @@ class _SettingsPageState extends State<SettingsPage> {
                           iconColor: theme.primaryColor,
                           title: "Privacy",
                           subtitle: "Privacy and security settings",
-                          onTap: () => context.push("/settings/privacy"),
+                          onTap: () async {
+                            // context.push("/settings/privacy");
+
+                            // 1. TRIGGER BIOMETRICS BEFORE NAVIGATION
+                            final success = await ref
+                                .read(authServiceProvider)
+                                .authenticate(
+                                  reason:
+                                      'Confirm identity to access privacy settings',
+                                );
+
+                            // 2. ONLY NAVIGATE IF SUCCESSFUL
+                            if (success && context.mounted) {
+                              context.push("/settings/privacy");
+                            }
+                          },
                         ),
                         MenuItem(
                           icon: CupertinoIcons.paintbrush_fill,
