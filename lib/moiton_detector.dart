@@ -22,6 +22,40 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
   final double _threshold = 2.0;
   final LocalAuthentication _auth = LocalAuthentication();
   bool _isAuthenticating = false;
+  bool _isLoggingOut = false;
+  bool _needsReauthOnResume = false; // Flag to track focus changes
+
+  // 1. Declare the Listener
+  late final AppLifecycleListener _lifecycleListener;
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      // 1. When app goes to background
+      onHide: () => _handleFocusLoss(),
+      onPause: () => _handleFocusLoss(),
+
+      // 2. When app comes back to foreground
+      onResume: () => _handleFocusGain(),
+    );
+  }
+
+  void _handleFocusLoss() {
+    if (_isAuthenticating || _isLoggingOut) return;
+
+    debugPrint("App went to background. Locking sensors...");
+    _stopListening();
+    _needsReauthOnResume =
+        true; // Mark that we need a check when the user returns
+  }
+
+  void _handleFocusGain() {
+    if (_needsReauthOnResume && !_isLoggingOut) {
+      debugPrint("App resumed. Prompting for biometrics...");
+      _authenticateWithBiometrics();
+      _needsReauthOnResume = false; // Reset flag
+    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -70,41 +104,62 @@ class _MotionDetectorState extends ConsumerState<MotionDetector> {
     _gyroSubscription = null;
   }
 
+  // void _triggerLogout() {
+  //   _stopListening();
+  //   ref.read(isAuthenticatedProvider.notifier).state = false;
+  // }
   void _triggerLogout() {
-    // if (mounted) {
     _stopListening();
-    ref.read(isAuthenticatedProvider.notifier).state = false;
-
-    // context.pushReplacement("/");
-    // }
+    // Wrap in microtask to avoid "DiagnosticsProperty" / build-phase errors
+    Future.microtask(() {
+      if (mounted) {
+        ref.read(isAuthenticatedProvider.notifier).state = false;
+      }
+    });
   }
 
   Future<void> _authenticateWithBiometrics() async {
+    // Prevent multiple simultaneous prompts
     if (_isAuthenticating) return;
 
-    _isAuthenticating = true;
+    _stopListening(); // Stop sensors so they don't interfere with the dialog
+
+    setState(() {
+      _isAuthenticating = true;
+    });
 
     try {
       final didAuthenticate = await _auth.authenticate(
         localizedReason: 'Please authenticate to continue',
-        options: const AuthenticationOptions(stickyAuth: true),
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
       );
 
       if (didAuthenticate) {
-        // Authentication succeeded
+        debugPrint("Authentication Successful");
+        setState(() => _isAuthenticating = false);
+        _startListening(); // Resume sensors
       } else {
+        debugPrint("Authentication Failed/Cancelled");
         _triggerLogout();
       }
     } catch (e) {
       debugPrint("Authentication error: $e");
       _triggerLogout();
     } finally {
-      _isAuthenticating = false;
+      if (mounted) {
+        setState(() {
+          _isAuthenticating = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     final settings = ref.read(settingsModelProvider);
     settings.removeListener(_onSettingsChanged);
     _stopListening();
