@@ -9,13 +9,13 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 flutter_rust_bridge = "=2.10.0"
 
-aes = "0.7"                # AES encryption
-block-modes = "0.8"        # Block cipher modes (e.g., CBC mode)
-rand = "0.8"               # For generating random IV
+aes = "0.7"         # AES encryption
+block-modes = "0.8" # Block cipher modes (e.g., CBC mode)
+rand = "0.8"        # For generating random IV
 # hex = "0.4"                # Optional: For easier handling of binary data as hex
 
 
-pbkdf2 = "0.12.2"          # For password generation
+pbkdf2 = "0.12.2" # For password generation
 sha2 = "0.10.2"
 
 lazy_static = "1.4.0"
@@ -49,3 +49,12 @@ once_cell = "1.21.3"
 gstreamer = "0.24.4"
 gstreamer-app = "0.24.4"
 gstreamer-video = "0.24.4"
+
+
+# only for flame graph
+# [profile.dev]
+# debug = true
+# strip = false
+# [profile.release]
+# debug = true
+# strip = false

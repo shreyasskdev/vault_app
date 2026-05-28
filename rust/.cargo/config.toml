@@ -1,0 +1,6 @@
+[env]
+RUST_TEST_THREADS = "1"
+
+# Only for flamegraph
+# [build]
+# rustflags = ["-C", "force-frame-pointers=yes"]

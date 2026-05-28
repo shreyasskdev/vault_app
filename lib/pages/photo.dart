@@ -74,7 +74,7 @@ class _PhotoViewState extends ConsumerState<PhotoView>
     _animationController = AnimationController(
       vsync: this,
       duration:
-          const Duration(milliseconds: 800), // Slightly longer for "Linux" feel
+          const Duration(milliseconds: 300), // Slightly longer for "Linux" feel
     );
     _animationCurve = CurvedAnimation(
       parent: _animationController,

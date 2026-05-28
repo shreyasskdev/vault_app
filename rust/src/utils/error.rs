@@ -1,5 +1,6 @@
 use core::fmt;
 
+#[derive(Debug)] // Added this line
 pub enum VaultError {
     Error(String),
     IncorrectPassword,

@@ -284,9 +284,15 @@ pub fn move_file(source_file: &str, dest_dir: &str) -> Result<(), VaultError> {
 pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(), VaultError> {
     const SKIP_PATTERNS: &[&str] = &[".hash", ".thumbs"];
 
-    let mut buffer = Cursor::new(Vec::new());
-    let mut zip = ZipWriter::new(&mut buffer);
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    // let mut buffer = Cursor::new(Vec::new());
+    let file = File::create(save_path).map_err(|e| VaultError::Error(e.to_string()))?;
+    let writer = io::BufWriter::new(file);
+    let mut zip = ZipWriter::new(writer);
+    // let mut zip = ZipWriter::new(&mut buffer);
+    // let options = FileOptions::default()
+    //     .compression_method(zip::CompressionMethod::Deflated)
+    //     .compression_level(Some(1));
+    let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
     let src_path = Path::new(root_dir);
 
     for entry in WalkDir::new(src_path) {
@@ -312,19 +318,25 @@ pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(
                 .map_err(|e| VaultError::Error(e.to_string()))?;
 
             if encryption {
-                match File::open(path.to_str().unwrap()) {
-                    Ok(file) => {
-                        let mut reader = BufReader::new(file);
-                        let mut buffer = Vec::new();
-                        match reader.read_to_end(&mut buffer) {
-                            Ok(_) => zip
-                                .write_all(&buffer)
-                                .map_err(|e| VaultError::Error(format!("{:?}", e)))?,
-                            Err(e) => return Err(VaultError::Error(e.to_string())),
-                        }
-                    }
-                    Err(e) => return Err(VaultError::Error(e.to_string())),
-                }
+                // match File::open(path.to_str().unwrap()) {
+                //     Ok(file) => {
+                //         let mut reader = BufReader::new(file);
+                //         let mut buffer = Vec::new();
+                //         match reader.read_to_end(&mut buffer) {
+                //             Ok(_) => zip
+                //                 .write_all(&buffer)
+                //                 .map_err(|e| VaultError::Error(format!("{:?}", e)))?,
+                //             Err(e) => return Err(VaultError::Error(e.to_string())),
+                //         }
+                //     }
+                //     Err(e) => return Err(VaultError::Error(e.to_string())),
+                // }
+                let file = File::open(path).map_err(|e| VaultError::Error(e.to_string()))?;
+
+                let mut reader = BufReader::new(file);
+
+                std::io::copy(&mut reader, &mut zip)
+                    .map_err(|e| VaultError::Error(e.to_string()))?;
             } else {
                 let decrypted_data = get_file(path.to_str().unwrap())?;
                 zip.write_all(&decrypted_data)
@@ -336,14 +348,16 @@ pub fn zip_backup(root_dir: &str, save_path: &str, encryption: bool) -> Result<(
         }
     }
 
-    drop(zip);
+    // drop(zip);
 
-    match File::create(save_path) {
-        Ok(mut file) => file
-            .write_all(&buffer.into_inner())
-            .map_err(|e| VaultError::Error(e.to_string())),
-        Err(e) => Err(VaultError::Error(e.to_string())),
-    }
+    // match File::create(save_path) {
+    //     Ok(mut file) => file
+    //         .write_all(&buffer.into_inner())
+    //         .map_err(|e| VaultError::Error(e.to_string())),
+    //     Err(e) => Err(VaultError::Error(e.to_string())),
+    // }
+    zip.finish().map_err(|e| VaultError::Error(e.to_string()))?;
+    Ok(())
 }
 
 pub fn restore_backup(
